@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 
+import os
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,6 +29,15 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+SITE_ID = 1
+
+CORS_ORIGIN_ALLOW_ALL = True # If this is used then `CORS_ORIGIN_WHITELIST` will not have any effect
+CORS_ALLOW_CREDENTIALS = True
+
+LOGIN_URL = '/dashboard/login/'
+LOGOUT_URL = '/dashboard/logout/'
+
+
 
 # Application definition
 
@@ -39,7 +50,28 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'information',
     'blog',
+
+    'taggit',
+    'django.contrib.sites',
+    'django.contrib.sitemaps',
+    'bootstrap4',
+
+    'dashboard',
+
+    'cloudinary_storage',
+    'cloudinary',
+    'captcha',
+
+   
+    'embed_video',
+
+    'ckeditor',
+    'rest_framework',
+
+    'tailwind',
 ]
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -49,6 +81,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'ludmilportifolio.urls'
@@ -56,7 +90,7 @@ ROOT_URLCONF = 'ludmilportifolio.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -65,6 +99,10 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+            'libraries':{
+                # make your file entry here.
+                'filter_tags': 'information.templatetags.filter',
+            }
         },
     },
 ]
@@ -117,9 +155,33 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "statics"),
+]
+
+STATIC_ROOT = os.path.join(BASE_DIR, "static_cdn", "static_root")
+
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, "static_cdn", "media_root")
+
+LOGIN_REDIRECT_URL = '/'
+
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
+# https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+SERVER_EMAIL = 'contacto@vemlimpar.com' # this is for to send 500 mail to admins
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtpout.secureserver.net'
+EMAIL_HOST_USER='contacto@vemlimpar.com'
+EMAIL_HOST_PASSWORD='ludmilpaulo@gmail.com'
+EMAIL_PORT=465
+EMAIL_USE_SSL=True
+EMAIL_USE_TLS=False

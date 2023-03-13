@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load filter_tags %}
+{% load blog_tags %}
+{% load bootstrap4 %}
+{% load cache %}
+
+{% block title %}
+  {{ object.title }}
+{% endblock %}
+
+
+{% block content %}
+{% include 'navbar.html' %}
+<div class="container">
+    <div class="row p-lg-4 p-2 justify-content-center">
+        <div class="col-12">
+            <ul id="modules">
+              {% for m in object.modules.all %}
+                <li data-id="{{ m.id }}" {% if m == module %}class="selected"{% endif %}>
+                  <a href="{% url "blog:user_post_detail_module" object.id m.id %}">
+                    <span>
+                      Module <span class="order">{{ m.order|add:1 }}</span>
+                    </span>
+                    <br>
+                    {{ m.title }}
+                  </a>
+                </li>
+              {% empty %}
+                <li>No modules yet.</li>
+              {% endfor %}
+            </ul>
+            <hr class="mt-2 mb-0">
+        </div>
+
+
+
+        <div class="col-12 text-left">
+           
+            <p class="project-disc"> {% cache 600 module_contents module %}
+              {% for content in module.contents.all %}
+                {% with item=content.item %}
+                  <h2>{{ item.title }}</h2>
+                  {{ item.render }}
+                {% endwith %}
+              {% endfor %}
+            {% endcache %}
+          </p> <br>
+
+        </div>
+    </div>
+
+    <div class="row mt-lg-6 justify-content-center">
+       <p>
+        <a href="{% url "blog:post_share" post.id %}">
+          Share this post
+        </a>
+      </p>
+    
+  {#   <div class="col-lg-6 pl-lg-4 mt-lg-0 mt-6 contact">
+       <h2>Similar posts</h2>
+          {% for post in similar_posts %}
+            <p>
+              <a href="{{ post.get_absolute_url }}">{{ post.title }}</a>
+            </p>
+          {% empty %}
+            There are no similar posts yet.
+          {% endfor %}
+          {% with comments.count as total_comments %}
+            <h2>
+              {{ total_comments }} comment{{ total_comments|pluralize }}
+            </h2>
+          {% endwith %}
+          {% for comment in comments %}
+            <div class="comment">
+              <p class="info">
+                Comment {{ forloop.counter }} by {{ comment.name }}
+                {{ comment.created }}
+              </p>
+              {{ comment.body|linebreaks }}
+            </div>
+          {% empty %}
+            <p>There are no comments yet.</p>
+          {% endfor %}
+          {% if new_comment %}
+            <h2>Your comment has been added.</h2>
+          {% else %}
+
+           <h2>Add a new comment</h2>
+
+        <form method="POST">
+                   <fieldset>
+                  {% csrf_token %}
+                    {{ comment_form.as_p }}
+                  {% buttons %}
+                      <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 text-center">
+                          <button class="get_bg_btn" type="submit">Send your message</button>
+                        
+                     </div>
+                  {% endbuttons %}
+                </fieldset>
+                </form>
+                 {% endif %}
+      
+    </div>
+</div>
+ #}
+
+
+</div>
+{% endblock content %}
