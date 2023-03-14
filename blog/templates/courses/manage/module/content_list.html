@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "blog_base.html" %}
 {% load course %}
 
 {% block title %}
@@ -14,7 +14,7 @@
         {% for m in course.modules.all %}
           <li data-id="{{ m.id }}" {% if m == module %}
            class="selected"{% endif %}>
-            <a href="{% url "module_content_list" m.id %}">
+            <a href="{% url "blog:module_content_list" m.id %}">
               <span>
                 Module <span class="order">{{ m.order|add:1 }}</span>
               </span>
@@ -26,7 +26,7 @@
           <li>No modules yet.</li>
         {% endfor %}
       </ul>
-      <p><a href="{% url "course_module_update" course.id %}">
+      <p><a href="{% url "blog:course_module_update" course.id %}">
       Edit modules</a></p>
     </div>
     <div class="module">
@@ -38,10 +38,10 @@
           <div data-id="{{ content.id }}">
             {% with item=content.item %}
               <p>{{ item }} ({{ item|model_name }})</p>
-              <a href="{% url "module_content_update" module.id item|model_name item.id %}">
+              <a href="{% url "blog:module_content_update" module.id item|model_name item.id %}">
                 Edit
               </a>
-              <form action="{% url "module_content_delete" content.id %}" method="post">
+              <form action="{% url "blog:module_content_delete" content.id %}" method="post">
                 <input type="submit" value="Delete">
                 {% csrf_token %}
               </form>
@@ -53,13 +53,13 @@
       </div>
       <h3>Add new content:</h3>
       <ul class="content-types">
-        <li><a href="{% url "module_content_create" module.id "text" %}">
+        <li><a href="{% url "blog:module_content_create" module.id "text" %}">
         Text</a></li>
-        <li><a href="{% url "module_content_create" module.id "image" %}">
+        <li><a href="{% url "blog:module_content_create" module.id "image" %}">
         Image</a></li>
-        <li><a href="{% url "module_content_create" module.id "video" %}">
+        <li><a href="{% url "blog:module_content_create" module.id "video" %}">
         Video</a></li>
-        <li><a href="{% url "module_content_create" module.id "file" %}">
+        <li><a href="{% url "blog:module_content_create" module.id "file" %}">
         File</a></li>
       </ul>
     </div>
@@ -78,7 +78,7 @@
           });
           $.ajax({
               type: 'POST',
-              url: '{% url "module_order" %}',
+              url: '{% url "blog:module_order" %}',
               contentType: 'application/json; charset=utf-8',
               dataType: 'json',
               data: JSON.stringify(modules_order)
@@ -96,7 +96,7 @@
 
           $.ajax({
               type: 'POST',
-              url: '{% url "content_order" %}',
+              url: '{% url "blog:content_order" %}',
               contentType: 'application/json; charset=utf-8',
               dataType: 'json',
               data: JSON.stringify(contents_order),

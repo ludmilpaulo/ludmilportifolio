@@ -1,7 +1,22 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
+from .api.views import CourseViewSet, SubjectListView, SubjectDetailView
 from . import views
+
+router = routers.DefaultRouter()
+router.register('blogs', CourseViewSet)
+
 app_name = "blog"
 urlpatterns = [
+    path('subjects/',
+         SubjectListView.as_view(),
+         name='subject_list'),
+    path('subjects/<pk>/',
+         SubjectDetailView.as_view(),
+         name='subject_detail'),
+
+    path('', include(router.urls)),
+    
     path('mine/',
          views.ManageCourseListView.as_view(),
          name='manage_course_list'),

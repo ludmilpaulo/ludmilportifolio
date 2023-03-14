@@ -34,7 +34,7 @@ class OwnerCourseMixin(OwnerMixin,
                        PermissionRequiredMixin):
     model = Course
     fields = ['subject', 'title', 'slug', 'overview']
-    success_url = reverse_lazy('manage_course_list')
+    success_url = reverse_lazy('blog:manage_course_list')
 
 
 class OwnerCourseEditMixin(OwnerCourseMixin, OwnerEditMixin):
@@ -81,7 +81,7 @@ class CourseModuleUpdateView(TemplateResponseMixin, View):
         formset = self.get_formset(data=request.POST)
         if formset.is_valid():
             formset.save()
-            return redirect('manage_course_list')
+            return redirect('blog:manage_course_list')
         return self.render_to_response({'course': self.course,
                                         'formset': formset})
 
@@ -94,7 +94,7 @@ class ContentCreateUpdateView(TemplateResponseMixin, View):
 
     def get_model(self, model_name):
         if model_name in ['text', 'video', 'image', 'file']:
-            return apps.get_model(app_label='courses',
+            return apps.get_model(app_label='blog',
                                   model_name=model_name)
         return None
 
@@ -134,7 +134,7 @@ class ContentCreateUpdateView(TemplateResponseMixin, View):
                 # new content
                 Content.objects.create(module=self.module,
                                        item=obj)
-            return redirect('module_content_list', self.module.id)
+            return redirect('blog:module_content_list', self.module.id)
 
         return self.render_to_response({'form': form,
                                         'object': self.obj})
@@ -148,7 +148,7 @@ class ContentDeleteView(View):
         module = content.module
         content.item.delete()
         content.delete()
-        return redirect('module_content_list', module.id)
+        return redirect('blog:module_content_list', module.id)
 
 
 class ModuleContentListView(TemplateResponseMixin, View):

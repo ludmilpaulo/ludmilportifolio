@@ -1,29 +1,36 @@
-{% extends "base.html" %}
+{% extends "blog_base.html" %}
 
-{% block title %}My courses{% endblock %}
+{% block title %}My Blogs{% endblock %}
 
 {% block content %}
-  <h1>My courses</h1>
+  
 
-  <div class="module">
-    {% for course in object_list %}
-      <div class="course-info">
+  <div class="container mt-lg-8">
+    <h1>My Blogs</h1>
+    <div class="row">
+         {% for course in object_list %}
+        <div class="col-lg-4 sidebar p-0">
+
+
+ 
+   
         <h3>{{ course.title }}</h3>
         <p>
-          <a href="{% url "course_edit" course.id %}">Edit</a>
-          <a href="{% url "course_delete" course.id %}">Delete</a>
-          <a href="{% url "course_module_update" course.id %}">Edit modules</a>
+          <a href="{% url "blog:course_edit" course.id %}">Edit</a>
+          <a href="{% url "blog:course_delete" course.id %}">Delete</a>
+          <a href="{% url "blog:course_module_update" course.id %}">Edit modules</a>
           {% if course.modules.count > 0 %}
-            <a href="{% url "module_content_list" course.modules.first.id %}">
+            <a href="{% url "blog:module_content_list" course.modules.first.id %}">
             Manage contents</a>
           {% endif %}
         </p>
       </div>
     {% empty %}
-      <p>You haven't created any courses yet.</p>
+      <p>You haven't created any blogs yet.</p>
     {% endfor %}
-    <p>
-      <a href="{% url "course_create" %}" class="button">Create new course</a>
-    </p>
+    
+      <a href="{% url 'blog:course_create' %}" ><h1>Create new blog</h1></a>
+   
   </div>
+</div>
 {% endblock %}
