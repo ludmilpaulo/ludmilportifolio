@@ -1,18 +1,20 @@
 from django import forms
-from django.forms.models import inlineformset_factory
-from .models import Course, Module
+from .models import Comment
 
 
-ModuleFormSet = inlineformset_factory(Course,
-                                      Module,
-                                      fields=['title',
-                                              'description'],
-                                      extra=2,
-                                      can_delete=True)
+class EmailPostForm(forms.Form):
+    name = forms.CharField(max_length=25)
+    email = forms.EmailField()
+    to = forms.EmailField()
+    comments = forms.CharField(required=False,
+                               widget=forms.Textarea)
 
 
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ('name', 'email', 'body')
 
 
-class CourseEnrollForm(forms.Form):
-    course = forms.ModelChoiceField(queryset=Course.objects.all(),
-                                    widget=forms.HiddenInput)
+class SearchForm(forms.Form):
+    query = forms.CharField()

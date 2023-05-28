@@ -1,223 +1,127 @@
-from django.urls import reverse_lazy
-from django.shortcuts import redirect, get_object_or_404
-from django.views.generic.base import TemplateResponseMixin, View
-from django.views.generic.list import ListView
-from django.views.generic.edit import CreateView, UpdateView, \
-                                      DeleteView
-from django.views.generic.detail import DetailView
-from django.contrib.auth.mixins import LoginRequiredMixin, \
-                                       PermissionRequiredMixin
-from django.forms.models import modelform_factory
-from django.apps import apps
 from django.db.models import Count
-from django.core.cache import cache
-from braces.views import CsrfExemptMixin, JsonRequestResponseMixin
-from .forms import CourseEnrollForm
-from .models import Course, Module, Content, Subject
-from .forms import ModuleFormSet
+from django.shortcuts import render, get_object_or_404
+from django.core.paginator import Paginator, EmptyPage,\
+                                  PageNotAnInteger
+from django.core.mail import send_mail
+from django.views.generic import ListView
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+from django.contrib.postgres.search import TrigramSimilarity
+from .models import Post, Comment
+from .forms import EmailPostForm, CommentForm, SearchForm
+from taggit.models import Tag
 
 
-class OwnerMixin(object):
-    def get_queryset(self):
-        qs = super().get_queryset()
-        return qs.filter(owner=self.request.user)
+def post_list(request, tag_slug=None):
+    object_list = Post.published.all()
+    tag = None
+
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        object_list = object_list.filter(tags__in=[tag])
+
+    paginator = Paginator(object_list, 3) # 3 posts in each page
+    page = request.GET.get('page')
+    try:
+        posts = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer deliver the first page
+        posts = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range deliver last page of results
+        posts = paginator.page(paginator.num_pages)
+    return render(request,
+                 'blog/post/list.html',
+                 {'page': page,
+                  'posts': posts,
+                  'tag': tag})
 
 
-class OwnerEditMixin(object):
-    def form_valid(self, form):
-        form.instance.owner = self.request.user
-        return super().form_valid(form)
+def post_detail(request, year, month, day, post):
+    post = get_object_or_404(Post, slug=post,
+                                   status='published',
+                                   publish__year=year,
+                                   publish__month=month,
+                                   publish__day=day)
+
+    # List of active comments for this post
+    comments = post.comments.filter(active=True)
+
+    new_comment = None
+
+    if request.method == 'POST':
+        # A comment was posted
+        comment_form = CommentForm(data=request.POST)
+        if comment_form.is_valid():
+            # Create Comment object but don't save to database yet
+            new_comment = comment_form.save(commit=False)
+            # Assign the current post to the comment
+            new_comment.post = post
+            # Save the comment to the database
+            new_comment.save()
+    else:
+        comment_form = CommentForm()
+
+    # List of similar posts
+    post_tags_ids = post.tags.values_list('id', flat=True)
+    similar_posts = Post.published.filter(tags__in=post_tags_ids)\
+                                  .exclude(id=post.id)
+    similar_posts = similar_posts.annotate(same_tags=Count('tags'))\
+                                .order_by('-same_tags','-publish')[:4]
+
+    return render(request,
+                  'blog/post/detail.html',
+                  {'post': post,
+                   'comments': comments,
+                   'new_comment': new_comment,
+                   'comment_form': comment_form,
+                   'similar_posts': similar_posts})
 
 
-class OwnerCourseMixin(OwnerMixin,
-                       LoginRequiredMixin,
-                       PermissionRequiredMixin):
-    model = Course
-    fields = ['subject', 'title', 'slug', 'overview']
-    success_url = reverse_lazy('blog:manage_course_list')
+class PostListView(ListView):
+    queryset = Post.published.all()
+    context_object_name = 'posts'
+    paginate_by = 3
+    template_name = 'blog/post/list.html'
 
 
-class OwnerCourseEditMixin(OwnerCourseMixin, OwnerEditMixin):
-    template_name = 'courses/manage/course/form.html'
+def post_share(request, post_id):
+    # Retrieve post by id
+    post = get_object_or_404(Post, id=post_id, status='published')
+    sent = False
 
-
-class ManageCourseListView(OwnerCourseMixin, ListView):
-    template_name = 'courses/manage/course/list.html'
-    permission_required = 'courses.view_course'
-
-class CourseCreateView(OwnerCourseEditMixin, CreateView):
-    permission_required = 'courses.add_course'
-
-
-class CourseUpdateView(OwnerCourseEditMixin, UpdateView):
-    permission_required = 'courses.change_course'
-
-
-class CourseDeleteView(OwnerCourseMixin, DeleteView):
-    template_name = 'courses/manage/course/delete.html'
-    permission_required = 'courses.delete_course'
-
-
-class CourseModuleUpdateView(TemplateResponseMixin, View):
-    template_name = 'courses/manage/module/formset.html'
-    course = None
-
-    def get_formset(self, data=None):
-        return ModuleFormSet(instance=self.course,
-                             data=data)
-
-    def dispatch(self, request, pk):
-        self.course = get_object_or_404(Course,
-                                        id=pk,
-                                        owner=request.user)
-        return super().dispatch(request, pk)
-
-    def get(self, request, *args, **kwargs):
-        formset = self.get_formset()
-        return self.render_to_response({'course': self.course,
-                                        'formset': formset})
-
-    def post(self, request, *args, **kwargs):
-        formset = self.get_formset(data=request.POST)
-        if formset.is_valid():
-            formset.save()
-            return redirect('blog:manage_course_list')
-        return self.render_to_response({'course': self.course,
-                                        'formset': formset})
-
-
-class ContentCreateUpdateView(TemplateResponseMixin, View):
-    module = None
-    model = None
-    obj = None
-    template_name = 'courses/manage/content/form.html'
-
-    def get_model(self, model_name):
-        if model_name in ['text', 'video', 'image', 'file']:
-            return apps.get_model(app_label='blog',
-                                  model_name=model_name)
-        return None
-
-    def get_form(self, model, *args, **kwargs):
-        Form = modelform_factory(model, exclude=['owner',
-                                                 'order',
-                                                 'created',
-                                                 'updated'])
-        return Form(*args, **kwargs)
-
-    def dispatch(self, request, module_id, model_name, id=None):
-        self.module = get_object_or_404(Module,
-                                       id=module_id,
-                                       course__owner=request.user)
-        self.model = self.get_model(model_name)
-        if id:
-            self.obj = get_object_or_404(self.model,
-                                         id=id,
-                                         owner=request.user)
-        return super().dispatch(request, module_id, model_name, id)
-
-    def get(self, request, module_id, model_name, id=None):
-        form = self.get_form(self.model, instance=self.obj)
-        return self.render_to_response({'form': form,
-                                        'object': self.obj})
-
-    def post(self, request, module_id, model_name, id=None):
-        form = self.get_form(self.model,
-                             instance=self.obj,
-                             data=request.POST,
-                             files=request.FILES)
+    if request.method == 'POST':
+        # Form was submitted
+        form = EmailPostForm(request.POST)
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.owner = request.user
-            obj.save()
-            if not id:
-                # new content
-                Content.objects.create(module=self.module,
-                                       item=obj)
-            return redirect('blog:module_content_list', self.module.id)
+            # Form fields passed validation
+            cd = form.cleaned_data
+            post_url = request.build_absolute_uri(post.get_absolute_url())
+            subject = f"{cd['name']} recommends you read {post.title}"
+            message = f"Read {post.title} at {post_url}\n\n" \
+                      f"{cd['name']}\'s comments: {cd['comments']}"
+            send_mail(subject, message, 'admin@myblog.com', [cd['to']])
+            sent = True
 
-        return self.render_to_response({'form': form,
-                                        'object': self.obj})
-
-
-class ContentDeleteView(View):
-    def post(self, request, id):
-        content = get_object_or_404(Content,
-                                    id=id,
-                                    module__course__owner=request.user)
-        module = content.module
-        content.item.delete()
-        content.delete()
-        return redirect('blog:module_content_list', module.id)
+    else:
+        form = EmailPostForm()
+    return render(request, 'blog/post/share.html', {'post': post,
+                                                    'form': form,
+                                                    'sent': sent})
 
 
-class ModuleContentListView(TemplateResponseMixin, View):
-    template_name = 'courses/manage/module/content_list.html'
-
-    def get(self, request, module_id):
-        module = get_object_or_404(Module,
-                                   id=module_id,
-                                   course__owner=request.user)
-
-        return self.render_to_response({'module': module})
-
-
-class ModuleOrderView(CsrfExemptMixin,
-                      JsonRequestResponseMixin,
-                      View):
-    def post(self, request):
-        for id, order in self.request_json.items():
-            Module.objects.filter(id=id,
-                   course__owner=request.user).update(order=order)
-        return self.render_json_response({'saved': 'OK'})
-
-
-class ContentOrderView(CsrfExemptMixin,
-                       JsonRequestResponseMixin,
-                       View):
-    def post(self, request):
-        for id, order in self.request_json.items():
-            Content.objects.filter(id=id,
-                       module__course__owner=request.user) \
-                       .update(order=order)
-        return self.render_json_response({'saved': 'OK'})
-
-
-class CourseListView(TemplateResponseMixin, View):
-    model = Course
-    template_name = 'courses/course/list.html'
-
-    def get(self, request, subject=None):
-        subjects = cache.get('all_subjects')
-        if not subjects:
-            subjects = Subject.objects.annotate(
-                            total_courses=Count('courses'))
-            cache.set('all_subjects', subjects)
-        all_courses = Course.objects.annotate(
-                           total_modules=Count('modules'))
-        if subject:
-            subject = get_object_or_404(Subject, slug=subject)
-            key = f'subject_{subject.id}_courses'
-            courses = cache.get(key)
-            if not courses:
-                courses = all_courses.filter(subject=subject)
-                cache.set(key, courses)
-        else:
-            courses = cache.get('all_courses')
-            if not courses:
-                courses = all_courses
-                cache.set('all_courses', courses)
-        return self.render_to_response({'subjects': subjects,
-                                        'subject': subject,
-                                        'courses': courses})
-
-
-class CourseDetailView(DetailView):
-    model = Course
-    template_name = 'courses/course/detail.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['enroll_form'] = CourseEnrollForm(
-                                   initial={'course':self.object})
-        return context
+def post_search(request):
+    form = SearchForm()
+    query = None
+    results = []
+    if 'query' in request.GET:
+        form = SearchForm(request.GET)
+        if form.is_valid():
+            query = form.cleaned_data['query']
+            results = Post.published.annotate(
+                similarity=TrigramSimilarity('title', query),
+            ).filter(similarity__gt=0.1).order_by('-similarity')
+    return render(request,
+                  'blog/post/search.html',
+                  {'form': form,
+                   'query': query,
+                   'results': results})

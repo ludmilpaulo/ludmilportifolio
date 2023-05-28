@@ -3,6 +3,8 @@ from django.contrib import admin
 from django.conf.urls.static import static
 from django.urls import path, include
 from django.contrib.sitemaps.views import sitemap
+from django.contrib.auth import views as auth_views
+from courses.views import CourseListView
 
 
 from information.views import (
@@ -16,9 +18,14 @@ from information.views import (
 from django.conf import settings
 from django.conf.urls.static import static
 
-
-
 from django.contrib.sitemaps.views import sitemap
+from blog.sitemaps import PostSitemap
+
+sitemaps = {
+    'posts': PostSitemap,
+}
+
+
 
 
 
@@ -34,7 +41,17 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls')),
     path('admin/', admin.site.urls),
 
+    path('accounts/login/', auth_views.LoginView.as_view(), name='login'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
+  
+    path('course/', include('courses.urls')),
+    path('', CourseListView.as_view(), name='course_list'),
+    path('students/', include('students.urls')),
+    path('api/', include('courses.api.urls', namespace='api')),
+
     path('blog/', include('blog.urls', namespace='blog')),
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
+         name='django.contrib.sitemaps.views.sitemap')
 
 
 
