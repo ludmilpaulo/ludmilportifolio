@@ -25,6 +25,7 @@
             </a>
             <hr class="m-0 mb-1">
             {% for course in object_list %}
+            <h3>{{ course.title }}</h3>
             <ul class="sidebar-list">
               <a href="{% url 'courses:course_edit' course.id %}">
                     <li class="{% if profile_active %}link-active{% endif %}">

@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'blog',
     'courses',
     'students',
-     'chat',
+    'chat',
 
     'taggit',
     'django.contrib.sites',

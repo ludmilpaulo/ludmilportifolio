@@ -1,23 +1,91 @@
-{% extends "base.html" %}
 
-{% block title %}My courses{% endblock %}
+{% extends 'base.html' %}
 
-{% block content %}
-  <h1>My courses</h1>
+{% load static %}
+{% block style %}
+    <link type="text/css" href="{% static 'dashboard.css' %}" rel="stylesheet">
+{% endblock style %}
 
-  <div class="module">
-    {% for course in object_list %}
-      <div class="course-info">
-        <h3>{{ course.title }}</h3>
-        <p><a href="{% url "student_course_detail" course.id %}">
-        Access contents</a></p>
-      </div>
-    {% empty %}
-      <p>
-        You are not enrolled in any courses yet.
-        <a href="{% url "course_list" %}">Browse courses</a>
-        to enroll in a course.
-      </p>
-    {% endfor %}
-  </div>
-{% endblock %}
+{% block body %}
+
+<div class="container mt-lg-8">
+    <div class="row">
+        <div class="col-lg-4 sidebar p-0">
+            <a href="{% url 'dashboard:dashboard' %}">
+                <div class="row info {% if dashboard %}dashboard-active {% else %}info-unactive{% endif %}">
+                    <div class="col-2 pic">
+                        <div class="profile-pic shadow" style="background-image: url('{% if profile.avatar %}{{profile.avatar.url}}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}')">
+                        </div>
+                    </div>
+                    <div class="col-10 name">
+                        <h5 class="full-name">{{profile.name_complete}}</h5>
+                        <p class="email">{{profile.email}}</p>
+                    </div>
+                </div>
+            </a>
+            <hr class="m-0 mb-1">
+            {% for course in object_list %}
+            <ul class="sidebar-list">
+              <a href="{% url 'students:student_course_detail' course.id %}">
+                    <li class="{% if profile_active %}link-active{% endif %}">
+                        {% comment %} <img src="{% static 'img/profile.svg' %}" width='25px'> {% endcomment %}
+                        <i class="uil uil-user dashboard-icon"></i>
+                        {{ course.title }}
+                        <p>Access contents</p>
+                    </li>
+                </a>
+               
+           
+                <hr class="sidebar-line">
+               
+            
+               
+                {% empty %}
+                <p>
+                  You are not enrolled in any courses yet.
+                </p>
+                  <a href="{% url "course_list" %}">Browse courses
+                 
+                
+                    <li>
+                        {% comment %} <img src="{% static 'img/experiences.svg' %}" width='25px'> {% endcomment %}
+                        <i class="uil uil-spinner-alt dashboard-icon"></i>
+                        Browse courses to enroll in a course.
+                    </li>
+                </a>
+               
+
+
+            </ul>
+            {% endfor %}
+            <hr class="sidebar-line">
+            <div class="container text-center sidebar-footer">
+                <a href="{% url 'homePage' %}">
+                    <img class="svg-icon-home" src="{% static 'img/home-icon.svg' %}" width='20px'>
+                    Home
+                </a>
+                <a href="{% url 'dashboard:logout' %}" id="logout">
+                    <img class="svg-icon-logout" src="{% static 'img/logout-icon.svg' %}" width='20px'>
+                    Logout
+                </a>
+            </div>
+        </div>
+    
+    </div>
+</div>
+
+<div class="container dash-footer my-6 py-2">
+    <div class="text-center">
+        <p>Copyright © {% now "Y" %} Ludmil Paulo . All rights reserved</p>
+        <p class="coder">Built with <i class="fa fa-heart text-danger"></i> in Django By <a href="">Ludmil Paulo</a></p>
+    </div>
+</div>
+
+
+{% endblock body %}
+
+
+
+{% block script %}
+    <script src="{% static 'dashboard.js' %}"></script>
+{% endblock script %}

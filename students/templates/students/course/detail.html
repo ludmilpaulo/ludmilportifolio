@@ -1,20 +1,41 @@
-{% extends "base.html" %}
+
+{% extends 'base.html' %}
 {% load cache %}
 
+
+{% load static %}
+
+{% block style %}
+    <link type="text/css" href="{% static 'dashboard.css' %}" rel="stylesheet">
+{% endblock style %}
 {% block title %}
   {{ object.title }}
 {% endblock %}
 
-{% block content %}
-  <h1>
-    {{ module.title }}
-  </h1>
-  <div class="contents">
-    <h3>Modules</h3>
-    <ul id="modules">
-      {% for m in object.modules.all %}
+{% block body %}
+
+<div class="container mt-lg-8">
+    <div class="row">
+        <div class="col-lg-4 sidebar p-0">
+            <a href="{% url 'dashboard:dashboard' %}">
+                <div class="row info {% if dashboard %}dashboard-active {% else %}info-unactive{% endif %}">
+                    <div class="col-2 pic">
+                        <div class="profile-pic shadow" style="background-image: url('{% if profile.avatar %}{{profile.avatar.url}}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}')">
+                        </div>
+                    </div>
+                    <div class="col-10 name">
+                        <h5 class="full-name">{{profile.name_complete}}</h5>
+                        <p class="email">{{profile.email}}</p>
+                    </div>
+                </div>
+            </a>
+            <hr class="m-0 mb-1">
+        
+            <ul class="sidebar-list">
+              {% for m in object.modules.all %}
+            
         <li data-id="{{ m.id }}" {% if m == module %}class="selected"{% endif %}>
-          <a href="{% url "students:student_course_detail_module" object.id m.id %}">
+          <a href="{% url 'students:student_course_detail_module' object.id m.id %}">
             <span>
               Module <span class="order">{{ m.order|add:1 }}</span>
             </span>
@@ -25,21 +46,60 @@
       {% empty %}
         <li>No modules yet.</li>
       {% endfor %}
-    </ul>
-    <h3>
-      <a href="{% url "chat:course_chat_room" object.id %}">
-        Course chat room
-      </a>
-    </h3>
-  </div>
-  <div class="module">
-    {% cache 600 module_contents module %}
-      {% for content in module.contents.all %}
-        {% with item=content.item %}
-          <h2>{{ item.title }}</h2>
-          {{ item.render }}
-        {% endwith %}
-      {% endfor %}
-    {% endcache %}
-  </div>
-{% endblock %}
+                
+                <hr class="sidebar-line">
+                
+  
+            </ul>
+           
+            <hr class="sidebar-line">
+            <div class="container text-center sidebar-footer">
+                <a href="{% url 'homePage' %}">
+                    <img class="svg-icon-home" src="{% static 'img/home-icon.svg' %}" width='20px'>
+                    Home
+                </a>
+                <a href="{% url 'dashboard:logout' %}" id="logout">
+                    <img class="svg-icon-logout" src="{% static 'img/logout-icon.svg' %}" width='20px'>
+                    Logout
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-8 dashboard-content pl-lg-4">
+            {% block dashboardContent %}
+                <div class="dashboard-title">My Modules</div>
+                <div class=""><small>{{ module.title }}</small></div>
+              
+                   
+                        {% cache 600 module_contents module %}
+                        {% for content in module.contents.all %}
+                          {% with item=content.item %}
+                            <h2>{{ item.title }}</h2>
+                            <div class="project-card mirror-face">
+                           <p> {{ item.render }} </p>
+                            </div>
+                          {% endwith %}
+                        {% endfor %}
+                      {% endcache %}
+            
+                </div>
+
+            {% endblock dashboardContent %}
+        </div>
+    </div>
+</div>
+
+<div class="container dash-footer my-6 py-2">
+    <div class="text-center">
+        <p>Copyright © {% now "Y" %} Ludmil Paulo . All rights reserved</p>
+        <p class="coder">Built with <i class="fa fa-heart text-danger"></i> in Django By <a href="">Ludmil Paulo</a></p>
+    </div>
+</div>
+
+
+{% endblock body %}
+
+
+
+{% block script %}
+    <script src="{% static 'dashboard.js' %}"></script>
+{% endblock script %}

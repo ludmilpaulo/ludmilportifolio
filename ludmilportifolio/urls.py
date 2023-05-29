@@ -11,6 +11,7 @@ from information.views import (
     homePage,
     projectsPage,
     projectDetail,
+    my_info,
     search,
     handler404,
 )
@@ -48,6 +49,7 @@ urlpatterns = [
     path('list/', CourseListView.as_view(), name='course_list'),
     path('students/', include('students.urls')),
     path('api/', include('courses.api.urls', namespace='api')),
+     path('my_info/', my_info),
 
     path('blog/', include('blog.urls', namespace='blog')),
 
