@@ -1,19 +1,45 @@
-{% extends "blog/base.html" %}
-
-{% block title %}Share a post{% endblock %}
-
+{% extends 'base.html' %}
+{% load static %}
+{% load blog_tags %}
+{% load bootstrap4 %}
 {% block content %}
-  {% if sent %}
-    <h1>E-mail successfully sent</h1>
-    <p>
-      "{{ post.title }}" was successfully sent to {{ form.cleaned_data.to }}.
-    </p>
-  {% else %}
-    <h1>Share "{{ post.title }}" by e-mail</h1>
-    <form method="post">
-      {{ form.as_p }}
-      {% csrf_token %}
-      <input type="submit" value="Send e-mail">
-    </form>
-  {% endif %}
+
+{% include 'navbar.html' %}
+
+ <div class="container">
+
+<div class="row mt-lg-6 justify-content-center">
+    
+    <div class="col-lg-6 pl-lg-4 mt-lg-0 mt-6 contact" id="message-me">
+        <h2>Share "{{ post.title }}" <span>by e-mail</span></h2>
+         {% if sent %}
+          <h1>E-mail successfully sent</h1>
+          <p>
+            "{{ post.title }}" was successfully sent to {{ form.cleaned_data.to }}.
+          </p>
+        {% else %}
+
+        <form method="POST">
+                   <fieldset>
+                  {% csrf_token %}
+                  {% bootstrap_form form %}
+                  {% buttons %}
+                      <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 text-center">
+                          <button class="get_bg_btn" type="submit">Send your message</button>
+                        
+                     </div>
+                  {% endbuttons %}
+                </fieldset>
+                </form>
+                {% endif %}
+      
+    </div>
+</div>
+
+</div>
 {% endblock %}
+
+
+
+
+

@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'information',
     'blog',
     'courses',
+    'students',
+     'chat',
 
     'taggit',
     'django.contrib.sites',
@@ -70,6 +72,8 @@ INSTALLED_APPS = [
     'rest_framework',
 
     'tailwind',
+    'memcache_status',
+  
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'

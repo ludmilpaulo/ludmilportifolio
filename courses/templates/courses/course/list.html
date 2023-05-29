@@ -1,51 +1,46 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}{% load static %}{% load filter_tags %}
 
-{% block title %}
-  {% if subject %}
-    {{ subject.title }} courses
-  {% else %}
-    All courses
-  {% endif %}
-{% endblock %}
 
 {% block content %}
-  <h1>
-    {% if subject %}
-      {{ subject.title }} courses
-    {% else %}
-      All courses
-    {% endif %}
-  </h1>
-  <div class="contents">
-    <h3>Subjects</h3>
-    <ul id="modules">
-      <li {% if not subject %}class="selected"{% endif %}>
-        <a href="{% url "course_list" %}">All</a>
-      </li>
-      {% for s in subjects %}
-        <li {% if subject == s %}class="selected"{% endif %}>
-          <a href="{% url "course_list_subject" s.slug %}">
-            {{ s.title }}
-            <br><span>{{ s.total_courses }} courses</span>
-          </a>
-        </li>
-      {% endfor %}
-    </ul>
-  </div>
-  <div class="module">
-    {% for course in courses %}
-      {% with subject=course.subject %}
-        <h3>
-          <a href="{% url "course_detail" course.slug %}">
-            {{ course.title }}
-          </a>
-        </h3>
-        <p>
-          <a href="{% url "course_list_subject" subject.slug %}">{{ subject }}</a>.
-            {{ course.total_modules }} modules.
-            Instructor: {{ course.owner.get_full_name }}
-        </p>
-      {% endwith %}
-    {% endfor %}
-  </div>
-{% endblock %}
+{% include 'navbar.html' %}
+    <div class="container">
+        <div class="row pt-lg-4 justify-content-center">
+            <div class="col-12 text-center">
+                <h1 class="display-3 title m-0">Projects</h1>
+                <p class="s-color">Hey, on this page you will find all of my projects.</p>
+            </div>
+
+            <div class="col-lg-8">
+                <form class="search-form" id="search-form" onSubmit="return false">
+                    <div class="form-group">
+                        <div class="input-group input-group-alternative mb-4">
+                            <input id="search-input" class="form-control search-input" name="searchText" placeholder="Search for projects with titles, descriptions, or tools." type="text" required>
+                            <div class="search-btn" id="search-btn">
+                                <span><i class="fa fa-search"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                <form>
+            </div>
+        </div>
+        <hr class="mt-2 mb-4 ">
+
+
+        <div class="row" id="projectsContainer">
+          {% for course in courses %}
+                <div class="col-lg-4 mb-4 ">
+                  <a href="{% url "courses:course_detail" course.slug %}">
+                        <div class="project-card mirror-face">
+                                <div class="project-card-img">
+                                    <img src="{{course.image.url}}">
+                                </div>
+                            <div class="card-body pt-0">
+                                <h1 class="project-card-title">{{course.title|truncatechars:22}}</h1>
+                                <p class="project-card-disc">{{course.description|truncatechars:100|safe}}</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+{% endblock content %}

@@ -1,27 +1,47 @@
-{% extends "base.html" %}
+{% extends 'dashboard.html' %}
 
-{% block title %}
+{% load static %}
+
+{% block dashboardContent %}
+<div class="container">
+  {% block title %}
   {% if object %}
-    Edit content "{{ object.title }}"
-  {% else %}
-    Add new content
-  {% endif %}
-{% endblock %}
+    <div class="row">
+        <div class="col-6">
+            <div class="dashboard-title">  Edit content "{{ object.title }}"</div>
+       
+        </div>
+        {% else %}
+        <div class="col-6">
+            <div class="create-one" id="display-create-form">
+              Add new content
+            </div>
+        </div>
+        {% endif %}
+        {% endblock %}
+    </div>
+    <hr class="mt-2">
 
-{% block content %}
-  <h1>
-    {% if object %}
-      Edit content "{{ object.title }}"
-    {% else %}
-      Add new content
-    {% endif %}
-  </h1>
-  <div class="module">
-    <h2>Course info</h2>
+    <h1>
+      {% if object %}
+        Edit content "{{ object.title }}"
+      {% else %}
+        Add new content
+      {% endif %}
+    </h1>
+
+    <div class="create-project-form">
+      <h2>Course info</h2>
     <form method="post" enctype="multipart/form-data">
       {{ form.as_p }}
       {% csrf_token %}
       <p><input type="submit" value="Save content"></p>
     </form>
-  </div>
-{% endblock %}
+      
+
+    </div>
+
+    
+</div>
+
+{% endblock dashboardContent %}

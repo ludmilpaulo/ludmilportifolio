@@ -45,11 +45,14 @@ urlpatterns = [
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
   
     path('course/', include('courses.urls')),
-    path('', CourseListView.as_view(), name='course_list'),
+    path('list/', CourseListView.as_view(), name='course_list'),
     path('students/', include('students.urls')),
     path('api/', include('courses.api.urls', namespace='api')),
 
     path('blog/', include('blog.urls', namespace='blog')),
+
+    path('chat/', include('chat.urls', namespace='chat')),
+
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
          name='django.contrib.sitemaps.views.sitemap')
 

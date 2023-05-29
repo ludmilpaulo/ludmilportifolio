@@ -21,7 +21,7 @@
                         <p class="email">{{profile.email}}</p>
                     </div>
                 </div>
-            <a/>
+            </a>
             <hr class="m-0 mb-1">
             <ul class="sidebar-list">
                 <a href="{% url 'dashboard:profile' %}">
@@ -68,7 +68,7 @@
                     </li>
                 </a>
 
-                 <a href="{% url 'blog:manage_course_list' %}">
+                 <a href="{% url 'courses:manage_course_list' %}">
                     <li class="{% if projects_active %}link-active{% endif %}">
                         {% comment %} <img src="{% static 'img/dash-projects.svg' %}" width='25px'> {% endcomment %}
                         <i class="uil uil-folder-open dashboard-icon"></i>

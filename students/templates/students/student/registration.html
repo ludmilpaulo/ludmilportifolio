@@ -1,19 +1,67 @@
-{% extends "base.html" %}
 
-{% block title %}
-    Sign up
-{% endblock %}
+{% extends "base.html" %}
+{% load i18n static %}
+{% load bootstrap4 %}
+
+{% block title %}Login{% endblock title %}
+{% comment %} {% block bodyclass %}{{ block.super }} login{% endblock %}
+
+{% block usertools %}{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block breadcrumbs %}{% endblock %} {% endcomment %}
 
 {% block content %}
-  <h1>
-    Sign up
-  </h1>
-  <div class="module">
-    <p>Enter your details to create an account:</p>
-    <form method="post">
-      {{ form.as_p }}
-      {% csrf_token %}
-      <p><input type="submit" value="Create my account"></p>
-    </form>
-  </div>
+	<div class="container">
+		<div class="row justify-content-center mt-6 mb-8">
+			<div class="col-lg-6 col-12 text-center">
+				<div class="login-card">
+					<div class="login-card-header">
+						<h3>Welcome</h3>
+					</div>
+					<div class="mx-5">
+						<div id="content-main">
+
+						{% if user.is_authenticated %}
+							<meta http-equiv="REFRESH" content="0;url={{ request.scheme }}://{{ request.META.HTTP_HOST }}/dashboard/">
+						{% endif %}
+						{% if message %}
+							<p class="errornote">
+								{{message}}
+							</p>
+						{% endif %}
+            <p>Enter your details to create an account:</p>
+            <form method="post">
+
+							<div class="form-group mb-3">
+
+              
+                  <fieldset>
+                 {% csrf_token %}
+                 {% bootstrap_form form %}
+                 {% buttons %}
+                     <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 text-center">
+                         <button class="get_bg_btn" type="submit">Create my account</button>
+                       
+                    </div>
+                 {% endbuttons %}
+           
+        
+                </form>
+							</div>
+
+							
+							
+							
+						</form>
+
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 {% endblock %}

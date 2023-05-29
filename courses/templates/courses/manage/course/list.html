@@ -1,29 +1,121 @@
-{% extends "base.html" %}
 
-{% block title %}My courses{% endblock %}
+{% extends 'base.html' %}
 
-{% block content %}
-  <h1>My courses</h1>
+{% load static %}
+{% block style %}
+    <link type="text/css" href="{% static 'dashboard.css' %}" rel="stylesheet">
+{% endblock style %}
 
-  <div class="module">
-    {% for course in object_list %}
-      <div class="course-info">
-        <h3>{{ course.title }}</h3>
-        <p>
-          <a href="{% url "course_edit" course.id %}">Edit</a>
-          <a href="{% url "course_delete" course.id %}">Delete</a>
-          <a href="{% url "course_module_update" course.id %}">Edit modules</a>
-          {% if course.modules.count > 0 %}
-            <a href="{% url "module_content_list" course.modules.first.id %}">
-            Manage contents</a>
-          {% endif %}
-        </p>
-      </div>
-    {% empty %}
-      <p>You haven't created any courses yet.</p>
-    {% endfor %}
-    <p>
-      <a href="{% url "course_create" %}" class="button">Create new course</a>
-    </p>
-  </div>
-{% endblock %}
+{% block body %}
+
+<div class="container mt-lg-8">
+    <div class="row">
+        <div class="col-lg-4 sidebar p-0">
+            <a href="{% url 'dashboard:dashboard' %}">
+                <div class="row info {% if dashboard %}dashboard-active {% else %}info-unactive{% endif %}">
+                    <div class="col-2 pic">
+                        <div class="profile-pic shadow" style="background-image: url('{% if profile.avatar %}{{profile.avatar.url}}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}')">
+                        </div>
+                    </div>
+                    <div class="col-10 name">
+                        <h5 class="full-name">{{profile.name_complete}}</h5>
+                        <p class="email">{{profile.email}}</p>
+                    </div>
+                </div>
+            </a>
+            <hr class="m-0 mb-1">
+            {% for course in object_list %}
+            <ul class="sidebar-list">
+              <a href="{% url 'courses:course_edit' course.id %}">
+                    <li class="{% if profile_active %}link-active{% endif %}">
+                        {% comment %} <img src="{% static 'img/profile.svg' %}" width='25px'> {% endcomment %}
+                        <i class="uil uil-user dashboard-icon"></i>
+                        Edit
+                    </li>
+                </a>
+                <a href="{% url 'courses:course_delete' course.id %}">
+                    <li class="{% if messages_active %}link-active{% endif %}">
+                        {% comment %} <img src="{% static 'img/messages.svg' %}" width='25px'> {% endcomment %}
+                        <i class="uil uil-envelope-download dashboard-icon"></i>
+                        Delete
+                    </li>
+                </a>
+                <hr class="sidebar-line">
+                <a href="{% url "courses:course_module_update" course.id %}">
+                    <li>
+                        {% comment %} <img src="{% static 'img/education.svg' %}" width='28px'> {% endcomment %}
+                        <i class="uil uil-graduation-cap dashboard-icon"></i>
+                        Edit modules
+                    </li>
+                </a>
+                {% if course.modules.count > 0 %}
+                <a href="{% url "courses:module_content_list" course.modules.first.id %}">
+                    <li>
+                        {% comment %} <img src="{% static 'img/competences.svg' %}" width='28px'> {% endcomment %}
+                        <i class="uil uil-award dashboard-icon"></i>
+                        Manage contents
+                    </li>
+                </a>
+                {% endif %}
+                {% empty %}
+                    <li>
+                        {% comment %} <img src="{% static 'img/experiences.svg' %}" width='25px'> {% endcomment %}
+                        <i class="uil uil-spinner-alt dashboard-icon"></i>
+                        You haven't created any courses yet.
+                    </li>
+                </a>
+               
+
+
+            </ul>
+            {% endfor %}
+            <hr class="sidebar-line">
+            <div class="container text-center sidebar-footer">
+                <a href="{% url 'homePage' %}">
+                    <img class="svg-icon-home" src="{% static 'img/home-icon.svg' %}" width='20px'>
+                    Home
+                </a>
+                <a href="{% url 'dashboard:logout' %}" id="logout">
+                    <img class="svg-icon-logout" src="{% static 'img/logout-icon.svg' %}" width='20px'>
+                    Logout
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-8 dashboard-content pl-lg-4">
+            {% block dashboardContent %}
+                <div class="dashboard-title">My courses</div>
+                <div class=""><small>Welcome Again</small></div>
+                <div class="row">
+                    <div class="col-12 card">
+                        <div class="">
+                          <div class="col-6">
+                            <a href="{% url "courses:course_create" %}" class="button">
+                            <div class="create-one" >
+                              Create new course
+                            </div>
+                          </a>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+
+            {% endblock dashboardContent %}
+        </div>
+    </div>
+</div>
+
+<div class="container dash-footer my-6 py-2">
+    <div class="text-center">
+        <p>Copyright © {% now "Y" %} Ludmil Paulo . All rights reserved</p>
+        <p class="coder">Built with <i class="fa fa-heart text-danger"></i> in Django By <a href="">Ludmil Paulo</a></p>
+    </div>
+</div>
+
+
+{% endblock body %}
+
+
+
+{% block script %}
+    <script src="{% static 'dashboard.js' %}"></script>
+{% endblock script %}

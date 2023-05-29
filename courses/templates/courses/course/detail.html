@@ -1,34 +1,46 @@
-{% extends "base.html" %}
-
-{% block title %}
-  {{ object.title }}
-{% endblock %}
+{% extends 'base.html' %}{% load filter_tags %}
+{% load custom_filters %}
 
 {% block content %}
-  {% with subject=object.subject %}
-    <h1>
-      {{ object.title }}
-    </h1>
-    <div class="module">
-      <h2>Overview</h2>
-      <p>
-        <a href="{% url "course_list_subject" subject.slug %}">
-        {{ subject.title }}</a>.
-        {{ object.modules.count }} modules.
-        Instructor: {{ object.owner.get_full_name }}
-      </p>
-      {{ object.overview|linebreaks }}
-      {% if request.user.is_authenticated %}
-        <form action="{% url "student_enroll_course" %}" method="post">
-          {{ enroll_form }}
-          {% csrf_token %}
-          <input type="submit" value="Enroll now">
-        </form>
-      {% else %}
-        <a href="{% url "student_registration" %}" class="button">
-          Register to enroll
-        </a>
-      {% endif %}
+{% with subject=object.subject %}
+<div class="container">
+    <div class="row p-lg-4 p-2 justify-content-center">
+        <div class="col-12">
+            <p class="project-title mb-3">{{ object.title }}</p> 
+            <hr class="mt-2 mb-0">
+        </div>
+        <div class="col-lg-10 col-12">
+            <img class="d-block w-100 project-image" src="{{object.image.url}}" alt="{{project.title}} (img)">
+        </div>
+        <div class="col-12 text-left">
+            <p class="mini-title">Overview:</p>
+            <p class="project-disc">{{ object.overview|linebreaks }}</p>
+            
+            <div class="mt-4">
+                <p class="mini-title"> {{ subject.title }}</p>
+                <p class="mb-0">{{ object.modules.count }} modules.</p>
+              
+                    <span class="tool">Instructor: {{ object.owner.get_full_name }}</span>
+                      
+
+            </div>
+
+            <div class="text-left pt-4">
+              {% if request.user.is_authenticated %}
+              <form action="{% url "students:student_enroll_course" %}" method="post">
+                {{ enroll_form }}
+                {% csrf_token %}
+                <input type="submit" value="Enroll now">
+              </form>
+            {% else %}
+                <a href="{% url 'students:student_registration' %}" class="preview-btn">
+                  <i class="fas fa-globe"></i> 
+                    Register to enroll
+                  </a>
+                {% endif %}
+            </div>
+        </div>
     </div>
-  {% endwith %}
-{% endblock %}
+</div>
+{% endwith %}
+{% endblock content %}
