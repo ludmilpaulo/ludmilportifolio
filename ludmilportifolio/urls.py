@@ -19,15 +19,14 @@ from information.views import (
 from django.conf import settings
 from django.conf.urls.static import static
 
-from django.contrib.sitemaps.views import sitemap
 from blog.sitemaps import PostSitemap
+from blog.views import PostListView, send_email
+from django.contrib.sitemaps.views import sitemap
+
 
 sitemaps = {
     'posts': PostSitemap,
 }
-
-
-
 
 
 handler404 = handler404
@@ -49,7 +48,9 @@ urlpatterns = [
     path('list/', CourseListView.as_view(), name='course_list'),
     path('students/', include('students.urls')),
     path('api/', include('courses.api.urls', namespace='api')),
-     path('my_info/', my_info),
+    path('my_info/', my_info),
+    path('contact_me/', send_email, name='send_email' ),
+
 
     path('blog/', include('blog.urls', namespace='blog')),
 

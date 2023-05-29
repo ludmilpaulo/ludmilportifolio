@@ -68,7 +68,7 @@ class Project(models.Model):
     slug = models.SlugField(max_length=200, blank=True, null=True)
     description = RichTextField(blank=False, null=False)
     image = models.ImageField(upload_to="projects/", blank=False, null=False)
-    tools = models.ManyToManyField(Competence, related_name='tools',max_length=200, blank=False, null=False)
+    tools = models.ManyToManyField(Competence, related_name='tools',max_length=200, blank=False)
     demo = models.URLField()
     github = models.URLField()
     show_in_slider = models.BooleanField(default=False)

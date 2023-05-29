@@ -1,5 +1,5 @@
 from django.db.models import Count
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import redirect, render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage,\
                                   PageNotAnInteger
 from django.core.mail import send_mail
@@ -9,6 +9,7 @@ from django.contrib.postgres.search import TrigramSimilarity
 from .models import Post, Comment
 from .forms import EmailPostForm, CommentForm, SearchForm
 from taggit.models import Tag
+from information.forms import MessageForm
 
 
 def post_list(request, tag_slug=None):
@@ -99,7 +100,7 @@ def post_share(request, post_id):
             subject = f"{cd['name']} recommends you read {post.title}"
             message = f"Read {post.title} at {post_url}\n\n" \
                       f"{cd['name']}\'s comments: {cd['comments']}"
-            send_mail(subject, message, 'admin@myblog.com', [cd['to']])
+            send_mail(subject, message, 'contact@ludmilpaulo.com', [cd['to']])
             sent = True
 
     else:
@@ -125,3 +126,36 @@ def post_search(request):
                   {'form': form,
                    'query': query,
                    'results': results})
+
+def send_email(request):
+    form = MessageForm() 
+
+    if request.method == 'POST':
+        form = MessageForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+
+            name = form.cleaned_data['name']
+            from_email = form.cleaned_data['email']
+            message = form.cleaned_data['message']
+
+           
+
+            return redirect('/')
+    
+
+    else:
+        form = MessageForm()
+
+    context = {
+        'form' : form
+      
+    }
+
+    return render(request , 'blog/contact.html' , context)
+
+
+
+def send_success(request):
+    return redirect('/')

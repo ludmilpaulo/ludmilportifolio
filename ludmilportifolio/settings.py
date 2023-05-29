@@ -181,12 +181,12 @@ LOGIN_REDIRECT_URL = '/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-SERVER_EMAIL = 'contacto@vemlimpar.com' # this is for to send 500 mail to admins
+SERVER_EMAIL = 'contact@ludmilpaulo.com' # this is for to send 500 mail to admins
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtpout.secureserver.net'
-EMAIL_HOST_USER='contacto@vemlimpar.com'
-EMAIL_HOST_PASSWORD='ludmilpaulo@gmail.com'
+EMAIL_HOST_USER='contact@ludmilpaulo.com'
+EMAIL_HOST_PASSWORD='Maitland@2023'
 EMAIL_PORT=465
 EMAIL_USE_SSL=True
 EMAIL_USE_TLS=False
