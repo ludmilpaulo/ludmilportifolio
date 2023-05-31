@@ -190,3 +190,15 @@ EMAIL_HOST_PASSWORD='Maitland@2023'
 EMAIL_PORT=465
 EMAIL_USE_SSL=True
 EMAIL_USE_TLS=False
+
+SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']
+CKEDITOR_UPLOAD_PATH = 'uploads/'  # Relative path for uploaded files
+CKEDITOR_IMAGE_BACKEND = 'pillow'  # Image processing backend
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'full',
+        'height': 300,
+        'width': 900,
+        'filebrowserUploadUrl': '/ckeditor/upload/',  # File uploader URL
+    }
+}

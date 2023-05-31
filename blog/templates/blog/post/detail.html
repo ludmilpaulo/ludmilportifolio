@@ -19,12 +19,13 @@
             <div class="mt-4">
                 <p class="mini-title">Similar posts:</p>
                
-                {% for post in similar_posts %}
+                {% for similar in similar_posts %}
+                {% with similar.post.all|join:"," as post %}
                     {% with post|split:"," as post_list %}
                         {% for post in post_list %}
-                             <span class="tool">{{ post.title }}</span>
+                           <a href="{{ post.get_absolute_url }}">  <span class="tool">{{ post.title }}</span></a>
                         {% endfor %}
-                  
+                   {% endwith %}
                 {% endwith %}
                 {% empty %}
                 There are no similar posts yet.

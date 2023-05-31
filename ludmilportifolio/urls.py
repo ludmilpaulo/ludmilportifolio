@@ -5,6 +5,8 @@ from django.urls import path, include
 from django.contrib.sitemaps.views import sitemap
 from django.contrib.auth import views as auth_views
 from courses.views import CourseListView
+from ckeditor_uploader import views as ckeditor_views
+
 
 
 from information.views import (
@@ -55,6 +57,8 @@ urlpatterns = [
     path('blog/', include('blog.urls', namespace='blog')),
 
     path('chat/', include('chat.urls', namespace='chat')),
+
+    path('ckeditor/upload/', ckeditor_views.upload, name='ckeditor_upload'),
 
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
          name='django.contrib.sitemaps.views.sitemap')

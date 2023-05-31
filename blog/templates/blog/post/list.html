@@ -30,7 +30,7 @@
                                 </div>
                             <div class="card-body pt-0">
                                 <h1 class="project-card-title">{{post.title|truncatechars:22}}</h1>
-                                <p class="project-card-disc">{{post.body|truncatechars:100|safe}}</p>
+                                <p class="project-card-disc">{{post.body|truncatechars:44|safe}}</p>
                             </div>
                         </div>
                     </a>
@@ -39,4 +39,5 @@
         </div>
        
   {% include "pagination.html" with page=posts %}
+    </div>
 {% endblock content %}
