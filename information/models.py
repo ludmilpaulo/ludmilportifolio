@@ -51,9 +51,7 @@ class Education(models.Model):
 
 class Experience(models.Model):
     title = models.CharField(max_length=50, blank=False, null=False)
-    stack = models.ManyToManyField(Competence,
-                                      related_name='stack',
-                                      blank=True)
+    stack = models.ManyToManyField(Competence, related_name='stack',blank=True)
     company = models.CharField(max_length=50, blank=False, null=False)
     logo = models.ImageField(upload_to="logo/", blank=True, null=True)
     description = models.TextField(blank=False, null=False)
@@ -64,6 +62,18 @@ class Experience(models.Model):
 
 
 class Project(models.Model):
+    all = 1
+    live = 2
+    upcoming = 3
+    in_progress = 4
+
+    STATUS_CHOICES = (
+        (all, "all"),
+        (live, "live"),
+        (upcoming, "upcoming"),
+        (in_progress, "in_progress"),
+    )
+
     title = models.CharField(max_length=200, blank=False, null=False)
     slug = models.SlugField(max_length=200, blank=True, null=True)
     description = RichTextField(blank=False, null=False)
@@ -71,6 +81,7 @@ class Project(models.Model):
     tools = models.ManyToManyField(Competence, related_name='tools',max_length=200, blank=False)
     demo = models.URLField()
     github = models.URLField()
+    status = models.IntegerField(choices=STATUS_CHOICES, verbose_name='stado')
     show_in_slider = models.BooleanField(default=False)
 
     def __str__(self):
@@ -95,7 +106,7 @@ class Message(models.Model):
     message = models.TextField(null=False, blank=False)
     send_time = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
-    
+
 
     def __str__(self):
         return self.name

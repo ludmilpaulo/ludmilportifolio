@@ -51,7 +51,7 @@ INSTALLED_APPS = [
 
     'cloudinary_storage',
     'cloudinary',
-    'captcha',
+  #  'captcha',
     'corsheaders',
 
     'embed_video',
