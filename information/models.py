@@ -62,13 +62,13 @@ class Experience(models.Model):
 
 
 class Project(models.Model):
-    all = 1
+    clone = 1
     live = 2
     upcoming = 3
     in_progress = 4
 
     STATUS_CHOICES = (
-        (all, "all"),
+        (clone, "clone"),
         (live, "live"),
         (upcoming, "upcoming"),
         (in_progress, "in_progress"),

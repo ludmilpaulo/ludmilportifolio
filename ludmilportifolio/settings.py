@@ -14,7 +14,7 @@ SECRET_KEY = "django-insecure-m$u!_fe6zd*o*ej$#tx3_2^ei32gh^064p!j6j7x(9uds%xe48
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 FRONTEND_URL = 'https://www.ludmilpaulo.com'
 
 # Application definition

@@ -35,43 +35,43 @@ class ProjectViewSet(viewsets.ModelViewSet):
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
-
+    
+    
 def my_info(request):
-
     competences = CompetenceSerializer(
         Competence.objects.all().order_by('id'),
-            many=True,
-            context={
-                "request": request
-            }).data
+        many=True,
+        context={"request": request}
+    ).data
+    
     education = EducationSerializer(
         Education.objects.all().order_by('-id'),
         many=True,
-        context={
-            "request": request
-        }).data
+        context={"request": request}
+    ).data
+    
     experiences = ExperienceSerializer(
         Experience.objects.all().order_by('-id'),
         many=True,
-        context={
-            "request": request
-        }).data
+        context={"request": request}
+    ).data
+    
     projects = ProjectSerializer(
         Project.objects.filter(show_in_slider=True).order_by('-id'),
-         many=True,
-        context={
-            "request": request
-        }).data
+        many=True,
+        context={"request": request}
+    ).data
+    
     info = InformationSerializer(
         Information.objects.all(),
         many=True,
-        context={
-            "request": request
-        }).data
+        context={"request": request}
+    ).data
 
-
-    return JsonResponse({"competences": competences, 
-        "experiences":experiences,
-        "projects":projects,
-        "info":info,
-        "education":education})
+    return JsonResponse({
+        "competences": competences,
+        "experiences": experiences,
+        "projects": projects,
+        "info": info,
+        "education": education
+    })
