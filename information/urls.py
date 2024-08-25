@@ -7,6 +7,7 @@ from .views import (
     ExperienceViewSet,
     ProjectViewSet,
     MessageViewSet,
+    submit_message,
 )
 
 router = DefaultRouter()
@@ -19,4 +20,5 @@ router.register(r'messages', MessageViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('submit-message/', submit_message, name='submit_message'),
 ]
