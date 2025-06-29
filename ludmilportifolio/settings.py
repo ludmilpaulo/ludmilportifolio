@@ -28,8 +28,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "information",
     'django_ckeditor_5',
-
+    'doctor_search',
     'rest_framework',
+    "testimonials",
     'rest_framework.authtoken',
     'corsheaders',
 ]

@@ -8,7 +8,9 @@ from information.views import my_info, submit_message
 urlpatterns = [
     path("admin/", admin.site.urls),
     path('my_info/', my_info),
+   # path('doctor/', include('doctor_search.urls')),
     path('submit-message/', submit_message, name='submit_message'),
+    path('testimonials/', include('testimonials.urls')),
     path(
         "ckeditor5/", include("django_ckeditor_5.urls"), name="ck_editor_5_upload_file"
     ),

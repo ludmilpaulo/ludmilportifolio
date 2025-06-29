@@ -1,0 +1,72 @@
+[
+  {
+    "model": "information.competence",
+    "pk": 10,
+    "fields": {
+      "title": "GIS Mapping",
+      "percentage": "80",
+      "description": "Geospatial Information Systems for mapping and data analysis.",
+      "image": "competences/gis.png"
+    }
+  },
+  {
+    "model": "information.competence",
+    "pk": 11,
+    "fields": {
+      "title": "Geofencing",
+      "percentage": "78",
+      "description": "Location-based technology for real-time tracking and notifications.",
+      "image": "competences/geofencing.png"
+    }
+  },
+  {
+    "model": "information.competence",
+    "pk": 12,
+    "fields": {
+      "title": "eCommerce Integrations",
+      "percentage": "88",
+      "description": "Payment gateways, inventory, and logistics for online marketplaces.",
+      "image": "competences/ecommerce.png"
+    }
+  },
+  {
+    "model": "information.competence",
+    "pk": 13,
+    "fields": {
+      "title": "Job Matching Algorithms",
+      "percentage": "82",
+      "description": "Automated systems for matching candidates to jobs using AI.",
+      "image": "competences/job-matching.png"
+    }
+  },
+  {
+    "model": "information.competence",
+    "pk": 14,
+    "fields": {
+      "title": "Food Logistics",
+      "percentage": "76",
+      "description": "Systems for food rescue, delivery, and supply chain management.",
+      "image": "competences/foodlogistics.png"
+    }
+  },
+  {
+    "model": "information.competence",
+    "pk": 15,
+    "fields": {
+      "title": "LegalTech",
+      "percentage": "73",
+      "description": "Online legal solutions for contracts and public guidance.",
+      "image": "competences/legaltech.png"
+    }
+  },
+  {
+    "model": "information.competence",
+    "pk": 16,
+    "fields": {
+      "title": "AI Mentoring",
+      "percentage": "85",
+      "description": "Artificial intelligence for student mentoring and career guidance.",
+      "image": "competences/ai-mentoring.png"
+    }
+  }
+]

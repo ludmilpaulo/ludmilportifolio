@@ -1,0 +1,200 @@
+[
+  {
+    "model": "information.project",
+    "pk": 4,
+    "fields": {
+      "title": "Ghanade",
+      "slug": "ghanade",
+      "description": "<p>An innovative e-commerce marketplace built for West Africa. Ghanade connects buyers and sellers, offers seamless payment integration, and supports real-time order tracking. The project prioritizes speed, mobile-first UI, and multi-language support, making online shopping accessible and secure for all users.</p>",
+      "image": "projects/ghanade.jpg",
+      "demo": "https://www.ghanadude.co.za/",
+      "github": "https://github.com/ludmilpaulo/ghanade",
+      "status": 2,
+      "show_in_slider": true,
+      "tools": [1, 2, 3]
+    }
+  },
+  {
+    "model": "information.project",
+    "pk": 5,
+    "fields": {
+      "title": "TBAE",
+      "slug": "tbae",
+      "description": "<p>TBAE (Team Building and Events) is a robust event management platform for South Africa, allowing organizations to plan, book, and manage team building activities, conferences, and venues. The platform integrates with payment providers, offers custom admin dashboards, and automates communication and reporting.</p>",
+      "image": "projects/tbae.jpg",
+      "demo": "https://www.tbae.co.za/",
+      "github": "https://github.com/ludmilpaulo/tbae",
+      "status": 2,
+      "show_in_slider": true,
+      "tools": [1, 2, 4, 5]
+    }
+  },
+  {
+    "model": "information.project",
+    "pk": 6,
+    "fields": {
+      "title": "Debaren",
+      "slug": "debaren",
+      "description": "<p>Debaren is a modern digital solution for venue management, bookings, and event scheduling. Designed for scalability, the platform allows easy management of large inventories, advanced user permissions, and real-time availability. The system is integrated with Django and Next.js for a seamless, responsive experience.</p>",
+      "image": "projects/debaren.jpg",
+      "demo": "https://www.debaren.com/",
+      "github": "https://github.com/ludmilpaulo/debaren",
+      "status": 2,
+      "show_in_slider": true,
+      "tools": [1, 3, 6]
+    }
+  },
+  
+  {
+    "model": "information.project",
+    "pk": 7,
+    "fields": {
+      "title": "EduBridge",
+      "slug": "edubridge",
+      "description": "<p>EduBridge is an AI-powered platform connecting underprivileged students with remote mentors, tutors, and scholarship opportunities. It automates pairing, progress tracking, and provides a safe chat environment, making quality education accessible for all.</p>",
+      "image": "projects/edubridge.jpg",
+      "demo": "",
+      "github": "",
+      "status": 3,
+      "show_in_slider": false,
+      "tools": [1, 2, 7]
+    }
+  },
+  {
+    "model": "information.project",
+    "pk": 8,
+    "fields": {
+      "title": "HealthMate",
+      "slug": "healthmate",
+      "description": "<p>HealthMate is a telemedicine and health records platform for rural areas. Users can book appointments, securely store medical histories, and connect with doctors online—breaking barriers to quality healthcare.</p>",
+      "image": "projects/healthmate.jpg",
+      "demo": "",
+      "github": "",
+      "status": 3,
+      "show_in_slider": false,
+      "tools": [2, 3, 8]
+    }
+  },
+  {
+    "model": "information.project",
+    "pk": 9,
+    "fields": {
+      "title": "AgriSmart",
+      "slug": "agrismart",
+      "description": "<p>AgriSmart uses IoT sensors and AI to help small-scale farmers monitor soil, crops, and weather, receive actionable advice, and improve yields. It aims to make smart agriculture affordable and sustainable for everyone.</p>",
+      "image": "projects/agrismart.jpg",
+      "demo": "",
+      "github": "",
+      "status": 3,
+      "show_in_slider": false,
+      "tools": [1, 5, 9]
+    }
+  },
+  {
+    "model": "information.project",
+    "pk": 10,
+    "fields": {
+      "title": "CleanCity",
+      "slug": "cleancity",
+      "description": "<p>CleanCity is a community-driven platform that empowers residents to report waste, illegal dumping, and infrastructure issues. It automates notifications to municipalities and tracks responses for public accountability.</p>",
+      "image": "projects/cleancity.jpg",
+      "demo": "",
+      "github": "",
+      "status": 3,
+      "show_in_slider": false,
+      "tools": [2, 4, 10]
+    }
+  },
+  {
+    "model": "information.project",
+    "pk": 11,
+    "fields": {
+      "title": "SafeJourney",
+      "slug": "safejourney",
+      "description": "<p>SafeJourney is an emergency app for public transport. With one tap, users can share real-time location with trusted contacts and request help in unsafe situations. It uses geofencing and local support networks for rapid response.</p>",
+      "image": "projects/safejourney.jpg",
+      "demo": "",
+      "github": "",
+      "status": 3,
+      "show_in_slider": false,
+      "tools": [1, 7, 11]
+    }
+  },
+  {
+    "model": "information.project",
+    "pk": 12,
+    "fields": {
+      "title": "ArtisanHub",
+      "slug": "artisanhub",
+      "description": "<p>ArtisanHub is an online marketplace for local artisans and craftsmen. It provides tools for managing inventory, marketing products, and reaching new customers—empowering small businesses to grow digitally.</p>",
+      "image": "projects/artisanhub.jpg",
+      "demo": "",
+      "github": "",
+      "status": 3,
+      "show_in_slider": false,
+      "tools": [2, 6, 12]
+    }
+  },
+  {
+    "model": "information.project",
+    "pk": 13,
+    "fields": {
+      "title": "JobLift",
+      "slug": "joblift",
+      "description": "<p>JobLift bridges the gap between job seekers and small businesses. It features easy job posting, skills assessment, and automated matching, making local employment more accessible and transparent.</p>",
+      "image": "projects/joblift.jpg",
+      "demo": "",
+      "github": "",
+      "status": 3,
+      "show_in_slider": false,
+      "tools": [1, 5, 13]
+    }
+  },
+  {
+    "model": "information.project",
+    "pk": 14,
+    "fields": {
+      "title": "FoodRescue",
+      "slug": "foodrescue",
+      "description": "<p>FoodRescue connects restaurants and grocery stores with NGOs and shelters to donate surplus food efficiently. It tracks inventory, pickup times, and impact, fighting hunger and food waste in one platform.</p>",
+      "image": "projects/foodrescue.jpg",
+      "demo": "",
+      "github": "",
+      "status": 3,
+      "show_in_slider": false,
+      "tools": [2, 8, 14]
+    }
+  },
+  {
+    "model": "information.project",
+    "pk": 15,
+    "fields": {
+      "title": "LegalEase",
+      "slug": "legalease",
+      "description": "<p>LegalEase offers simple, step-by-step legal guidance for common issues—tenancy, business registration, contracts—especially for people with limited access to lawyers. It’s user-friendly and multilingual.</p>",
+      "image": "projects/legalease.jpg",
+      "demo": "",
+      "github": "",
+      "status": 3,
+      "show_in_slider": false,
+      "tools": [1, 3, 15]
+    }
+  },
+  {
+    "model": "information.project",
+    "pk": 16,
+    "fields": {
+      "title": "BrightFuture",
+      "slug": "brightfuture",
+      "description": "<p>BrightFuture connects high school learners with mentors, scholarships, and career guidance. It uses AI to suggest resources, matches students with mentors, and tracks progress—helping young people reach their full potential.</p>",
+      "image": "projects/brightfuture.jpg",
+      "demo": "",
+      "github": "",
+      "status": 3,
+      "show_in_slider": false,
+      "tools": [2, 4, 16]
+    }
+  }
+
+
+]

@@ -1,0 +1,222 @@
+[
+  {
+    "model": "testimonials.testimonial",
+    "pk": 1,
+    "fields": {
+      "name": "Miguel Lopes",
+      "role": "Director of Family Cladding",
+      "avatar": "testimonials/miguel.jpg",
+      "text": "Ludmil delivered outstanding results for our website and digital strategy. His dedication and expertise made the process smooth and professional.",
+      "created_at": "2024-06-01T14:05:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 2,
+    "fields": {
+      "name": "Abrao Maria",
+      "role": "CEO of Kudya",
+      "avatar": "testimonials/abrao.jpg",
+      "text": "Partnering with Ludmil transformed our digital presence. He's fast, creative, and deeply understands our business needs. Highly recommended!",
+      "created_at": "2024-06-04T16:22:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 3,
+    "fields": {
+      "name": "Patrick Effile",
+      "role": "CEO of Kiss Media Production",
+      "avatar": "testimonials/patrick.jpg",
+      "text": "From idea to execution, Ludmil exceeded our expectations. His technical know-how and professionalism stand out in every project.",
+      "created_at": "2024-06-07T10:10:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 4,
+    "fields": {
+      "name": "Chiamaka Nwosu",
+      "role": "Final Year Computer Science Student",
+      "avatar": "testimonials/chiamaka.jpg",
+      "text": "As my mentor, Ludmil helped me truly understand web development. His patience and clear explanations made me fall in love with coding.",
+      "created_at": "2024-06-09T09:40:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 5,
+    "fields": {
+      "name": "Bruno Fernandes",
+      "role": "Founder",
+      "avatar": "testimonials/bruno.jpg",
+      "text": "Thanks to Ludmil’s fast prototyping, we launched SmartAgro’s MVP in just three weeks. He’s our go-to for all things tech.",
+      "created_at": "2024-06-10T11:35:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 6,
+    "fields": {
+      "name": "Thabo Nkosi",
+      "role": "Junior Software Developer",
+      "avatar": "testimonials/thabo.jpg",
+      "text": "Ludmil’s mentorship helped me land my first job. He encouraged me, reviewed my code, and taught me industry best practices.",
+      "created_at": "2024-06-11T13:20:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 7,
+    "fields": {
+      "name": "Fatima Diallo",
+      "role": "Operations Manager",
+      "avatar": "testimonials/fatima.jpg",
+      "text": "Our workflow automation project was a challenge until Ludmil joined. He delivered scalable solutions and boosted our efficiency.",
+      "created_at": "2024-06-12T10:10:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 8,
+    "fields": {
+      "name": "Sarah Johnson",
+      "role": "Product Manager",
+      "avatar": "testimonials/sarah.jpg",
+      "text": "Ludmil's attention to detail and passion for tech are unmatched. He delivered our project ahead of schedule, exceeding all expectations!",
+      "created_at": "2024-06-13T09:20:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 9,
+    "fields": {
+      "name": "Michael Osei",
+      "role": "CTO",
+      "avatar": "testimonials/michael.jpg",
+      "text": "Absolutely world-class developer. Great communication and always finds creative solutions to tough problems.",
+      "created_at": "2024-06-14T16:10:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 10,
+    "fields": {
+      "name": "Zanele M.",
+      "role": "CEO",
+      "avatar": "testimonials/zanele.jpg",
+      "text": "We loved working with Ludmil! Fast, professional, and truly cares about your vision. Highly recommend.",
+      "created_at": "2024-06-15T08:44:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 11,
+    "fields": {
+      "name": "Sibusiso Sithole",
+      "role": "Entrepreneur",
+      "avatar": "testimonials/sibusiso.jpg",
+      "text": "I had an idea but didn’t know where to start. Ludmil guided me from concept to launch and connected me with great resources.",
+      "created_at": "2024-06-15T09:10:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 12,
+    "fields": {
+      "name": "Nomvula Mthethwa",
+      "role": "Digital Marketing Lead",
+      "avatar": "testimonials/nomvula.jpg",
+      "text": "Ludmil rebuilt our e-commerce site from scratch and sales doubled within three months. He’s an asset to any team.",
+      "created_at": "2024-06-16T11:05:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 13,
+    "fields": {
+      "name": "Alex Kimani",
+      "role": "Backend Developer",
+      "avatar": "testimonials/alex.jpg",
+      "text": "I collaborated with Ludmil on a microservices project. He’s a strong leader and always ready to help.",
+      "created_at": "2024-06-16T16:22:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 14,
+    "fields": {
+      "name": "Emilia Costa",
+      "role": "Data Analyst",
+      "avatar": "testimonials/emilia.jpg",
+      "text": "He automated our reporting and gave us real-time dashboards. Super professional and easy to work with!",
+      "created_at": "2024-06-17T10:10:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 15,
+    "fields": {
+      "name": "Kabelo P.",
+      "role": "Student",
+      "avatar": "testimonials/kabelo.jpg",
+      "text": "As a student mentee, I’m grateful for Ludmil’s guidance. I gained real experience and built confidence in coding.",
+      "created_at": "2024-06-18T09:19:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 16,
+    "fields": {
+      "name": "Samira Ben Ali",
+      "role": "HR Director",
+      "avatar": "testimonials/samira.jpg",
+      "text": "We streamlined onboarding with Ludmil’s custom HR platform. He cares about user experience and delivers with quality.",
+      "created_at": "2024-06-18T15:22:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 17,
+    "fields": {
+      "name": "Jason Umeh",
+      "role": "Full Stack Developer",
+      "avatar": "testimonials/jason.jpg",
+      "text": "I learned more in 3 months working with Ludmil than in a year on my own. He’s a mentor who invests in your growth.",
+      "created_at": "2024-06-19T10:18:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 18,
+    "fields": {
+      "name": "Vanessa Nyoni",
+      "role": "Founder,",
+      "avatar": "testimonials/vanessa.jpg",
+      "text": "My online store dream became real thanks to Ludmil’s expertise and support. Everything works perfectly!",
+      "created_at": "2024-06-19T18:41:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 19,
+    "fields": {
+      "name": "Clive Masuku",
+      "role": "Business Analyst",
+      "avatar": "testimonials/clive.jpg",
+      "text": "Ludmil is an excellent communicator who translates complex tech into simple solutions. Highly efficient.",
+      "created_at": "2024-06-20T09:44:00Z"
+    }
+  },
+  {
+    "model": "testimonials.testimonial",
+    "pk": 20,
+    "fields": {
+      "name": "Olga Petrova",
+      "role": "Student,",
+      "avatar": "testimonials/olga.jpg",
+      "text": "Ludmil was my coding tutor. With his help, I completed my thesis project and won an award!",
+      "created_at": "2024-06-20T17:11:00Z"
+    }
+  }
+]
