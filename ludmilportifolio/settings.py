@@ -15,7 +15,7 @@ SECRET_KEY = "django-insecure-m$u!_fe6zd*o*ej$#tx3_2^ei32gh^064p!j6j7x(9uds%xe48
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-FRONTEND_URL = 'https://www.ludmilpaulo.com'
+FRONTEND_URL = 'https://www.ludmilpaulo.co.za'
 
 # Application definition
 
@@ -100,7 +100,11 @@ DATABASES = {
         "OPTIONS": {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
             "charset": "utf8mb4",
+            "autocommit": True,
+            "use_unicode": True,
         },
+        "CONN_MAX_AGE": 60,
+        "CONN_HEALTH_CHECKS": True,
     }
 }
 
@@ -180,7 +184,7 @@ SERVER_EMAIL = 'support@maindodigital.com' # this is for to send 500 mail to adm
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtpout.secureserver.net'
 EMAIL_HOST_USER='support@maindodigital.com'
-EMAIL_HOST_PASSWORD='Maitland@2024'
+EMAIL_HOST_PASSWORD='Maitland@2025'
 DEFAULT_FROM_EMAIL = 'support@maindodigital.com'
 EMAIL_PORT=465
 EMAIL_USE_SSL=True
