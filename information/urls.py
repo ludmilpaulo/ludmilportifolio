@@ -7,7 +7,8 @@ from .views import (
     TeamMemberViewSet, NotificationViewSet, submit_message, my_info,
     create_project_inquiry, get_project_inquiries, add_task, update_task_status,
     add_document, sign_document, add_team_member, update_project_progress,
-    add_message, create_invoice, get_notifications, update_notification
+    add_message, create_invoice, get_notifications, update_notification,
+    user_login, forgot_password, reset_password
 )
 
 router = DefaultRouter()
@@ -44,4 +45,9 @@ urlpatterns = [
     path('create-invoice/', create_invoice, name='create_invoice'),
     path('get-notifications/', get_notifications, name='get_notifications'),
     path('update-notification/', update_notification, name='update_notification'),
+    
+    # Authentication endpoints
+    path('login/', user_login, name='user_login'),
+    path('forgot-password/', forgot_password, name='forgot_password'),
+    path('reset-password/', reset_password, name='reset_password'),
 ]

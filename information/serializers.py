@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from .models import (
     Information, Competence, Education, Experience, Project, Message,
-    ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification
+    ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification,
+    CustomUser, PasswordResetToken, ClientAccount
 )
 
 class InformationSerializer(serializers.ModelSerializer):
@@ -94,3 +95,39 @@ class ProjectInquirySerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectInquiry
         fields = '__all__'
+
+
+# User Authentication Serializers
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'user_type', 'phone', 'company', 'is_verified', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+
+class PasswordResetTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PasswordResetToken
+        fields = ['token', 'created_at', 'expires_at']
+
+
+class ClientAccountSerializer(serializers.ModelSerializer):
+    user = CustomUserSerializer(read_only=True)
+    
+    class Meta:
+        model = ClientAccount
+        fields = '__all__'
+
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    token = serializers.UUIDField()
+    new_password = serializers.CharField(min_length=8)

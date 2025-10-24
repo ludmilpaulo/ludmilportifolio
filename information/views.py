@@ -4,21 +4,30 @@ from django.core.mail import send_mail
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.db.models import Q
+from django.conf import settings
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.hashers import make_password
+import uuid
+import random
+import string
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
 
 from .models import (
     Information, Competence, Education, Experience, Project, Message,
-    ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification
+    ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification,
+    CustomUser, PasswordResetToken, ClientAccount
 )
 from .serializers import (
     InformationSerializer, CompetenceSerializer, EducationSerializer, ExperienceSerializer,
     ProjectSerializer, MessageSerializer, ProjectInquirySerializer, InquiryMessageSerializer,
     TaskSerializer, InvoiceSerializer, InvoiceItemSerializer, DocumentSerializer,
-    TeamMemberSerializer, NotificationSerializer
+    TeamMemberSerializer, NotificationSerializer, CustomUserSerializer, PasswordResetTokenSerializer,
+    ClientAccountSerializer, LoginSerializer, ForgotPasswordSerializer, ResetPasswordSerializer
 )
 
 class InformationViewSet(viewsets.ModelViewSet):
@@ -166,7 +175,7 @@ def submit_message(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def create_project_inquiry(request):
-    """Create a new project inquiry"""
+    """Create a new project inquiry and auto-create client account"""
     try:
         data = request.data
         inquiry = ProjectInquiry.objects.create(
@@ -182,6 +191,56 @@ def create_project_inquiry(request):
             status=data.get('status', 'pending'),
             priority=data.get('priority', 'medium')
         )
+        
+        # Auto-create client account
+        username, password = generate_client_credentials()
+        
+        # Check if user already exists
+        if CustomUser.objects.filter(email=data.get('clientEmail')).exists():
+            user = CustomUser.objects.get(email=data.get('clientEmail'))
+        else:
+            user = CustomUser.objects.create_user(
+                username=username,
+                email=data.get('clientEmail'),
+                password=password,
+                first_name=data.get('clientName', '').split(' ')[0],
+                last_name=' '.join(data.get('clientName', '').split(' ')[1:]) if len(data.get('clientName', '').split(' ')) > 1 else '',
+                user_type='client',
+                phone=data.get('clientPhone', ''),
+                is_verified=True
+            )
+        
+        # Create client account link
+        client_account, created = ClientAccount.objects.get_or_create(
+            user=user,
+            project_inquiry=inquiry,
+            defaults={'auto_generated': True}
+        )
+        
+        # Send credentials email if new account
+        if created:
+            send_mail(
+                'Your Client Portal Access',
+                f'''
+                Dear {data.get('clientName')},
+                
+                Thank you for your project inquiry: {data.get('projectTitle')}
+                
+                Your client portal access has been created:
+                Username: {username}
+                Password: {password}
+                
+                You can access your portal at: {settings.FRONTEND_URL}/client-login
+                
+                Best regards,
+                Ludmil Paulo
+                ''',
+                settings.DEFAULT_FROM_EMAIL,
+                [data.get('clientEmail')],
+                fail_silently=False,
+            )
+            client_account.credentials_sent = True
+            client_account.save()
         
         # Create notification
         Notification.objects.create(
@@ -404,4 +463,111 @@ def update_notification(request):
         return Response({'success': False, 'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Authentication Views
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def user_login(request):
+    """User login with token authentication"""
+    try:
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            username = serializer.validated_data['username']
+            password = serializer.validated_data['password']
+            
+            user = authenticate(username=username, password=password)
+            if user:
+                token, created = Token.objects.get_or_create(user=user)
+                user_serializer = CustomUserSerializer(user)
+                return Response({
+                    'success': True,
+                    'token': token.key,
+                    'user': user_serializer.data
+                })
+            else:
+                return Response({'success': False, 'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            return Response({'success': False, 'error': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def forgot_password(request):
+    """Send password reset email"""
+    try:
+        serializer = ForgotPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            
+            try:
+                user = CustomUser.objects.get(email=email)
+                
+                # Create password reset token
+                expires_at = timezone.now() + timezone.timedelta(hours=24)
+                reset_token = PasswordResetToken.objects.create(
+                    user=user,
+                    expires_at=expires_at
+                )
+                
+                # Send email
+                reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token.token}"
+                send_mail(
+                    'Password Reset Request',
+                    f'Click the following link to reset your password: {reset_url}',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                    fail_silently=False,
+                )
+                
+                return Response({'success': True, 'message': 'Password reset email sent'})
+            except CustomUser.DoesNotExist:
+                return Response({'success': False, 'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'success': False, 'error': 'Invalid email'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password(request):
+    """Reset password using token"""
+    try:
+        serializer = ResetPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            token = serializer.validated_data['token']
+            new_password = serializer.validated_data['new_password']
+            
+            try:
+                reset_token = PasswordResetToken.objects.get(token=token, is_used=False)
+                
+                if reset_token.is_expired():
+                    return Response({'success': False, 'error': 'Token expired'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Update password
+                user = reset_token.user
+                user.set_password(new_password)
+                user.save()
+                
+                # Mark token as used
+                reset_token.is_used = True
+                reset_token.save()
+                
+                return Response({'success': True, 'message': 'Password reset successfully'})
+            except PasswordResetToken.DoesNotExist:
+                return Response({'success': False, 'error': 'Invalid token'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'success': False, 'error': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def generate_client_credentials():
+    """Generate random username and password for client"""
+    username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+    password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+    return username, password
 

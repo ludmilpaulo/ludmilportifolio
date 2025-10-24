@@ -1,5 +1,8 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.hashers import make_password
 import re
+import uuid
 from django_ckeditor_5.fields import CKEditor5Field
 
 
@@ -356,3 +359,47 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.type}"
+
+
+# User Authentication Models
+class CustomUser(AbstractUser):
+    USER_TYPE_CHOICES = [
+        ('admin', 'Admin'),
+        ('client', 'Client'),
+    ]
+    
+    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='client')
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    company = models.CharField(max_length=100, blank=True, null=True)
+    is_verified = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.username} ({self.user_type})"
+
+
+class PasswordResetToken(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    token = models.UUIDField(default=uuid.uuid4, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"Password reset for {self.user.username}"
+    
+    def is_expired(self):
+        from django.utils import timezone
+        return timezone.now() > self.expires_at
+
+
+class ClientAccount(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='client_account')
+    project_inquiry = models.ForeignKey(ProjectInquiry, on_delete=models.CASCADE, related_name='client_accounts')
+    auto_generated = models.BooleanField(default=True)
+    credentials_sent = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Client account for {self.user.username}"
