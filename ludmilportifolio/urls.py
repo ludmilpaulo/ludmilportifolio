@@ -11,6 +11,8 @@ urlpatterns = [
    # path('doctor/', include('doctor_search.urls')),
     path('submit-message/', submit_message, name='submit_message'),
     path('testimonials/', include('testimonials.urls')),
+    path('accounts/', include('accounts.urls')),
+    path('api/', include('information.urls')),
     path(
         "ckeditor5/", include("django_ckeditor_5.urls"), name="ck_editor_5_upload_file"
     ),

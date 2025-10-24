@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from .models import (
     Information, Competence, Education, Experience, Project, Message,
-    ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification,
-    CustomUser, PasswordResetToken, ClientAccount
+    ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification
 )
+from accounts.models import CustomUser, PasswordResetToken, ClientAccount
 
 class InformationSerializer(serializers.ModelSerializer):
     class Meta:

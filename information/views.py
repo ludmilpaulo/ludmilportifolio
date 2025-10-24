@@ -19,9 +19,9 @@ from rest_framework.authtoken.models import Token
 
 from .models import (
     Information, Competence, Education, Experience, Project, Message,
-    ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification,
-    CustomUser, PasswordResetToken, ClientAccount
+    ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification
 )
+from accounts.models import CustomUser, PasswordResetToken, ClientAccount
 from .serializers import (
     InformationSerializer, CompetenceSerializer, EducationSerializer, ExperienceSerializer,
     ProjectSerializer, MessageSerializer, ProjectInquirySerializer, InquiryMessageSerializer,
