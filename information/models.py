@@ -3,9 +3,6 @@ import re
 from django_ckeditor_5.fields import CKEditor5Field
 
 
-
-
-
 class Information(models.Model):
     name_complete = models.CharField(max_length=50, blank=True, null=True)
     avatar = models.ImageField(upload_to="avatar/", blank=True, null=True)
@@ -46,7 +43,6 @@ class Education(models.Model):
 
     def __str__(self):
         return self.title
-
 
 
 class Experience(models.Model):
@@ -107,6 +103,256 @@ class Message(models.Model):
     send_time = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
 
-
     def __str__(self):
         return self.name
+
+
+# New models for dashboard functionality
+class ProjectInquiry(models.Model):
+    PENDING = 'pending'
+    IN_PROGRESS = 'in-progress'
+    COMPLETED = 'completed'
+    CANCELLED = 'cancelled'
+    
+    STATUS_CHOICES = [
+        (PENDING, 'Pending'),
+        (IN_PROGRESS, 'In Progress'),
+        (COMPLETED, 'Completed'),
+        (CANCELLED, 'Cancelled'),
+    ]
+    
+    LOW = 'low'
+    MEDIUM = 'medium'
+    HIGH = 'high'
+    URGENT = 'urgent'
+    
+    PRIORITY_CHOICES = [
+        (LOW, 'Low'),
+        (MEDIUM, 'Medium'),
+        (HIGH, 'High'),
+        (URGENT, 'Urgent'),
+    ]
+    
+    WEB_APP = 'web-app'
+    MOBILE_APP = 'mobile-app'
+    E_COMMERCE = 'e-commerce'
+    DESKTOP_APP = 'desktop-app'
+    OTHER = 'other'
+    
+    PROJECT_TYPE_CHOICES = [
+        (WEB_APP, 'Web Application'),
+        (MOBILE_APP, 'Mobile Application'),
+        (E_COMMERCE, 'E-commerce'),
+        (DESKTOP_APP, 'Desktop Application'),
+        (OTHER, 'Other'),
+    ]
+
+    client_name = models.CharField(max_length=100)
+    client_email = models.EmailField()
+    client_phone = models.CharField(max_length=20, blank=True, null=True)
+    project_title = models.CharField(max_length=200)
+    project_description = models.TextField()
+    project_type = models.CharField(max_length=20, choices=PROJECT_TYPE_CHOICES, default=WEB_APP)
+    budget = models.CharField(max_length=100)
+    timeline = models.CharField(max_length=100)
+    additional_requirements = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default=MEDIUM)
+    
+    # Project tracking fields
+    estimated_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    actual_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    progress = models.IntegerField(default=0)  # 0-100 percentage
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.client_name} - {self.project_title}"
+
+
+class InquiryMessage(models.Model):
+    CLIENT = 'client'
+    ADMIN = 'admin'
+    
+    SENDER_CHOICES = [
+        (CLIENT, 'Client'),
+        (ADMIN, 'Admin'),
+    ]
+
+    inquiry = models.ForeignKey(ProjectInquiry, on_delete=models.CASCADE, related_name='messages')
+    sender = models.CharField(max_length=10, choices=SENDER_CHOICES)
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender} - {self.inquiry.project_title}"
+
+
+class Task(models.Model):
+    PENDING = 'pending'
+    IN_PROGRESS = 'in-progress'
+    COMPLETED = 'completed'
+    CANCELLED = 'cancelled'
+    
+    STATUS_CHOICES = [
+        (PENDING, 'Pending'),
+        (IN_PROGRESS, 'In Progress'),
+        (COMPLETED, 'Completed'),
+        (CANCELLED, 'Cancelled'),
+    ]
+    
+    LOW = 'low'
+    MEDIUM = 'medium'
+    HIGH = 'high'
+    URGENT = 'urgent'
+    
+    PRIORITY_CHOICES = [
+        (LOW, 'Low'),
+        (MEDIUM, 'Medium'),
+        (HIGH, 'High'),
+        (URGENT, 'Urgent'),
+    ]
+
+    inquiry = models.ForeignKey(ProjectInquiry, on_delete=models.CASCADE, related_name='tasks')
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    assigned_to = models.CharField(max_length=50, default='admin')  # 'admin' or 'client'
+    due_date = models.DateTimeField(blank=True, null=True)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default=MEDIUM)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.inquiry.project_title}"
+
+
+class Invoice(models.Model):
+    SENT = 'sent'
+    PAID = 'paid'
+    OVERDUE = 'overdue'
+    CANCELLED = 'cancelled'
+    
+    STATUS_CHOICES = [
+        (SENT, 'Sent'),
+        (PAID, 'Paid'),
+        (OVERDUE, 'Overdue'),
+        (CANCELLED, 'Cancelled'),
+    ]
+
+    inquiry = models.ForeignKey(ProjectInquiry, on_delete=models.CASCADE, related_name='invoices')
+    invoice_number = models.CharField(max_length=50, unique=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=SENT)
+    due_date = models.DateTimeField()
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.invoice_number} - {self.inquiry.project_title}"
+
+
+class InvoiceItem(models.Model):
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
+    description = models.CharField(max_length=200)
+    quantity = models.IntegerField(default=1)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.description} - {self.invoice.invoice_number}"
+
+
+class Document(models.Model):
+    CONTRACT = 'contract'
+    NDA = 'nda'
+    AGREEMENT = 'agreement'
+    PROPOSAL = 'proposal'
+    OTHER = 'other'
+    
+    TYPE_CHOICES = [
+        (CONTRACT, 'Contract'),
+        (NDA, 'NDA'),
+        (AGREEMENT, 'Agreement'),
+        (PROPOSAL, 'Proposal'),
+        (OTHER, 'Other'),
+    ]
+    
+    DRAFT = 'draft'
+    PENDING_SIGNATURE = 'pending-signature'
+    SIGNED = 'signed'
+    EXPIRED = 'expired'
+    
+    STATUS_CHOICES = [
+        (DRAFT, 'Draft'),
+        (PENDING_SIGNATURE, 'Pending Signature'),
+        (SIGNED, 'Signed'),
+        (EXPIRED, 'Expired'),
+    ]
+
+    inquiry = models.ForeignKey(ProjectInquiry, on_delete=models.CASCADE, related_name='documents')
+    title = models.CharField(max_length=200)
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=DRAFT)
+    download_url = models.URLField()
+    signed_at = models.DateTimeField(blank=True, null=True)
+    signed_by = models.CharField(max_length=100, blank=True, null=True)
+    expires_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.inquiry.project_title}"
+
+
+class TeamMember(models.Model):
+    inquiry = models.ForeignKey(ProjectInquiry, on_delete=models.CASCADE, related_name='team_members')
+    name = models.CharField(max_length=100)
+    role = models.CharField(max_length=100)
+    email = models.EmailField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.role}"
+
+
+class Notification(models.Model):
+    INFO = 'info'
+    SUCCESS = 'success'
+    WARNING = 'warning'
+    ERROR = 'error'
+    
+    TYPE_CHOICES = [
+        (INFO, 'Info'),
+        (SUCCESS, 'Success'),
+        (WARNING, 'Warning'),
+        (ERROR, 'Error'),
+    ]
+    
+    INQUIRY = 'inquiry'
+    TASK = 'task'
+    DOCUMENT = 'document'
+    INVOICE = 'invoice'
+    GENERAL = 'general'
+    
+    CATEGORY_CHOICES = [
+        (INQUIRY, 'Inquiry'),
+        (TASK, 'Task'),
+        (DOCUMENT, 'Document'),
+        (INVOICE, 'Invoice'),
+        (GENERAL, 'General'),
+    ]
+
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    type = models.CharField(max_length=10, choices=TYPE_CHOICES, default=INFO)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default=GENERAL)
+    is_read = models.BooleanField(default=False)
+    action_url = models.URLField(blank=True, null=True)
+    action_text = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.type}"
