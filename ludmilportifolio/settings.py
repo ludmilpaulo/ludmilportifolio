@@ -35,6 +35,9 @@ INSTALLED_APPS = [
     'corsheaders',
 ]
 
+# Custom User Model
+AUTH_USER_MODEL = 'information.CustomUser'
+
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
