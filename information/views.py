@@ -213,7 +213,7 @@ def create_project_inquiry(request):
         # Create client account link
         client_account, created = ClientAccount.objects.get_or_create(
             user=user,
-            project_inquiry=inquiry,
+            project_inquiry_id=inquiry.id,
             defaults={'auto_generated': True}
         )
         
