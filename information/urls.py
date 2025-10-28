@@ -7,7 +7,7 @@ from .views import (
     TeamMemberViewSet, NotificationViewSet, submit_message, my_info,
     create_project_inquiry, get_project_inquiries, add_task, update_task_status,
     add_document, sign_document, add_team_member, update_project_progress,
-    add_message, create_invoice, get_notifications, update_notification,
+    add_message, create_invoice, get_notifications, update_notification, get_analytics,
     user_login, forgot_password, reset_password
 )
 
@@ -45,6 +45,7 @@ urlpatterns = [
     path('create-invoice/', create_invoice, name='create_invoice'),
     path('get-notifications/', get_notifications, name='get_notifications'),
     path('update-notification/', update_notification, name='update_notification'),
+    path('get-analytics/', get_analytics, name='get_analytics'),
     
     # Authentication endpoints
     path('login/', user_login, name='user_login'),

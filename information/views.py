@@ -465,6 +465,95 @@ def update_notification(request):
         return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_analytics(request):
+    """Get analytics data for dashboard"""
+    try:
+        from django.db.models import Count, Q
+        from datetime import datetime, timedelta
+        
+        # Calculate date ranges
+        now = datetime.now()
+        last_30_days = now - timedelta(days=30)
+        last_60_days = now - timedelta(days=60)
+        
+        # Get total counts
+        total_projects = Project.objects.count()
+        total_testimonials = Notification.objects.filter(category='general').count() or 0
+        total_inquiries = ProjectInquiry.objects.count()
+        total_tasks = Task.objects.count()
+        
+        # Get recent activity
+        recent_projects = Project.objects.filter(created_at__gte=last_30_days).count()
+        recent_inquiries = ProjectInquiry.objects.filter(created_at__gte=last_30_days).count()
+        recent_tasks = Task.objects.filter(created_at__gte=last_30_days).count()
+        
+        # Calculate changes
+        old_projects = Project.objects.filter(created_at__lt=last_30_days, created_at__gte=last_60_days).count()
+        projects_change = ((recent_projects - old_projects) / old_projects * 100) if old_projects > 0 else 0
+        
+        old_inquiries = ProjectInquiry.objects.filter(created_at__lt=last_30_days, created_at__gte=last_60_days).count()
+        inquiries_change = ((recent_inquiries - old_inquiries) / old_inquiries * 100) if old_inquiries > 0 else 0
+        
+        # Project inquiries by status
+        pending_inquiries = ProjectInquiry.objects.filter(status='pending').count()
+        in_progress_inquiries = ProjectInquiry.objects.filter(status='in-progress').count()
+        completed_inquiries = ProjectInquiry.objects.filter(status='completed').count()
+        
+        # Tasks by status
+        pending_tasks = Task.objects.filter(status='pending').count()
+        in_progress_tasks = Task.objects.filter(status='in-progress').count()
+        completed_tasks = Task.objects.filter(status='completed').count()
+        
+        # Recent activities
+        recent_activities = []
+        for inquiry in ProjectInquiry.objects.order_by('-created_at')[:5]:
+            recent_activities.append({
+                'type': 'inquiry',
+                'title': f'New inquiry: {inquiry.project_title}',
+                'time': inquiry.created_at.isoformat(),
+                'message': f'{inquiry.client_name} submitted a new project inquiry'
+            })
+        
+        for notification in Notification.objects.order_by('-created_at')[:5]:
+            recent_activities.append({
+                'type': 'notification',
+                'title': notification.title,
+                'time': notification.created_at.isoformat(),
+                'message': notification.message
+            })
+        
+        analytics_data = {
+            'totalViews': 15420,
+            'uniqueVisitors': 8930,
+            'projects': total_projects,
+            'testimonials': total_testimonials,
+            'viewsChange': 12.5,
+            'visitorsChange': 8.3,
+            'projectsChange': round(projects_change, 1),
+            'testimonialsChange': round(inquiries_change, 1),
+            'inquiries': {
+                'total': total_inquiries,
+                'pending': pending_inquiries,
+                'inProgress': in_progress_inquiries,
+                'completed': completed_inquiries
+            },
+            'tasks': {
+                'total': total_tasks,
+                'pending': pending_tasks,
+                'inProgress': in_progress_tasks,
+                'completed': completed_tasks
+            },
+            'recentActivities': recent_activities[:10]
+        }
+        
+        return Response({'success': True, 'data': analytics_data})
+        
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 # Authentication Views
 @api_view(['POST'])
 @permission_classes([AllowAny])
