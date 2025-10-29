@@ -43,14 +43,35 @@ def user_login(request):
                 'user': user_serializer.data
             })
         else:
+            # Extract error details from serializer
+            error_data = serializer.errors
+            error_message = 'Invalid credentials'
+            error_code = 'invalid_credentials'
+            
+            # Get error from non_field_errors (from validate method)
+            if 'non_field_errors' in error_data:
+                error_detail = error_data['non_field_errors'][0]
+                error_message = str(error_detail)
+                
+                # Determine error code from message content (fallback method)
+                error_lower = error_message.lower()
+                if 'does not exist' in error_lower or 'user or email' in error_lower:
+                    error_code = 'user_not_found'
+                elif 'password' in error_lower and ('incorrect' in error_lower or 'wrong' in error_lower):
+                    error_code = 'wrong_password'
+                elif 'disabled' in error_lower:
+                    error_code = 'account_disabled'
+            
             return Response({
                 'success': False, 
-                'error': 'Invalid credentials'
+                'error': error_message,
+                'error_code': error_code
             }, status=status.HTTP_401_UNAUTHORIZED)
     except Exception as e:
         return Response({
             'success': False, 
-            'error': str(e)
+            'error': str(e),
+            'error_code': 'server_error'
         }, status=status.HTTP_400_BAD_REQUEST)
 
 

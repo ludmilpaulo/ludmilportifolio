@@ -36,12 +36,32 @@ class LoginSerializer(serializers.Serializer):
         password = attrs.get('password')
         
         if username and password:
-            user = authenticate(username=username, password=password)
-            if not user:
-                raise serializers.ValidationError('Invalid credentials')
-            if not user.is_active:
-                raise serializers.ValidationError('User account is disabled')
-            attrs['user'] = user
+            # Check if user exists first
+            user = None
+            try:
+                user = CustomUser.objects.get(username=username)
+            except CustomUser.DoesNotExist:
+                # Try email if username not found
+                try:
+                    user = CustomUser.objects.get(email=username)
+                except CustomUser.DoesNotExist:
+                    error = serializers.ValidationError('User or email does not exist. Please check your credentials.')
+                    error.error_code = 'user_not_found'
+                    raise error
+            
+            # Now authenticate with password
+            authenticated_user = authenticate(username=user.username, password=password)
+            if not authenticated_user:
+                error = serializers.ValidationError('Incorrect password. Please try again.')
+                error.error_code = 'wrong_password'
+                raise error
+            
+            if not authenticated_user.is_active:
+                error = serializers.ValidationError('User account is disabled. Please contact support.')
+                error.error_code = 'account_disabled'
+                raise error
+            
+            attrs['user'] = authenticated_user
             return attrs
         else:
             raise serializers.ValidationError('Must include username and password')
