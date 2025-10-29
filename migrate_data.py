@@ -23,7 +23,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 def migrate_data():
-    """Migrate all data from SQLite to MySQL"""
+    """Migrate all data fprom SQLite to MySQL"""
     
     print("🔄 Starting data migration from SQLite to MySQL...")
     
