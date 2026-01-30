@@ -8,7 +8,7 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('information', '0002_alter_project_status'),
+        ('information', '0003_add_dashboard_models'),
     ]
 
     operations = [

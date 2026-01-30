@@ -31,7 +31,11 @@ def user_login(request):
             # Log login activity
             LoginLog.objects.create(
                 user=user,
-                ip_address=request.META.get('REMOTE_ADDR', ''),
+                ip_address=(
+                    request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+                    or request.META.get('REMOTE_ADDR', '')
+                    or '0.0.0.0'
+                ),
                 user_agent=request.META.get('HTTP_USER_AGENT', ''),
                 is_successful=True
             )
@@ -333,6 +337,69 @@ def get_login_history(request):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def verify_token(request):
+    """Verify the validity of an authentication token"""
+    token_key = request.data.get('token')
+
+    if not token_key:
+        return Response({
+            'success': False,
+            'error': 'Token is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        token = Token.objects.select_related('user').get(key=token_key)
+
+        if not token.user.is_active:
+            return Response({
+                'success': False,
+                'error': 'User account is disabled'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response({
+            'success': True,
+            'valid': True,
+            'user_type': token.user.user_type
+        })
+    except Token.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Invalid token'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def get_user_by_token(request):
+    """Retrieve user details associated with a token"""
+    token_key = request.data.get('token')
+
+    if not token_key:
+        return Response({
+            'success': False,
+            'error': 'Token is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        token = Token.objects.select_related('user').get(key=token_key)
+
+        if not token.user.is_active:
+            return Response({
+                'success': False,
+                'error': 'User account is disabled'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        user_serializer = CustomUserSerializer(token.user)
+        return Response(user_serializer.data)
+    except Token.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Invalid token'
+        }, status=status.HTTP_401_UNAUTHORIZED)
 
 
 def generate_client_credentials():

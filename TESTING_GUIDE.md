@@ -3,7 +3,7 @@
 ## Admin Credentials
 
 **Username:** `ludmil`  
-**Password:** `Maitland@2025`
+**Password:** `Maitland@2026`
 
 ## Test Client Credentials
 
@@ -60,8 +60,8 @@ The application will run on `http://localhost:3000`
 
 1. Navigate to `http://localhost:3000/admin-login`
 2. Enter credentials:
-   - Username: `ludmil`
-   - Password: `Maitland@2025`
+- Username: `ludmil`
+- Password: `Maitland@2026`
 3. Click "Login"
 4. You should be redirected to the admin dashboard
 

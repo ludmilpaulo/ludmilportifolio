@@ -29,7 +29,7 @@ def main():
     print('\n[1] Testing Admin Credentials...')
     try:
         admin = User.objects.get(username='ludmil')
-        if admin.check_password('Maitland@2025'):
+        if admin.check_password('Maitland@2026'):
             print(f'✓ Admin credentials are VALID')
             print(f'  Username: {admin.username}')
             print(f'  Email: {admin.email}')
@@ -37,7 +37,7 @@ def main():
             print(f'  Is Staff: {admin.is_staff}')
         else:
             print('✗ Password is incorrect - updating password')
-            admin.set_password('Maitland@2025')
+            admin.set_password('Maitland@2026')
             admin.save()
             print('✓ Password updated successfully')
     except User.DoesNotExist:
@@ -45,7 +45,7 @@ def main():
         admin = User.objects.create_user(
             username='ludmil',
             email='ludmil@ludmilpaulo.co.za',
-            password='Maitland@2025',
+            password='Maitland@2026',
             first_name='Ludmil',
             last_name='Paulo',
             user_type='admin',
@@ -137,31 +137,77 @@ def main():
     
     for i, client in enumerate(created_clients[:len(project_templates)]):
         template = project_templates[i]
-        inquiry = ProjectInquiry.objects.create(
-            client_name=f"{client.first_name} {client.last_name}",
+        existing_inquiries = ProjectInquiry.objects.filter(
             client_email=client.email,
-            client_phone=client.phone or '',
-            project_title=template['title'],
-            project_description=template['description'],
-            project_type=template['type'],
-            budget=template['budget'],
-            timeline='3-6 months',
-            additional_requirements='Need regular updates and communication throughout the project.',
-            status='in-progress',
-            priority='high',
-            estimated_cost=35000,
-            actual_cost=12000,
-            progress=45
-        )
+            project_title=template['title']
+        ).order_by('-created_at')
+
+        if existing_inquiries.exists():
+            inquiry = existing_inquiries.first()
+            inquiry_created = False
+            # clean up duplicates if any
+            duplicates = existing_inquiries.exclude(pk=inquiry.pk)
+            if duplicates.exists():
+                duplicates.delete()
+        else:
+            inquiry = ProjectInquiry.objects.create(
+                client_name=f"{client.first_name} {client.last_name}",
+                client_email=client.email,
+                client_phone=client.phone or '',
+                project_title=template['title'],
+                project_description=template['description'],
+                project_type=template['type'],
+                budget=template['budget'],
+                timeline='3-6 months',
+                additional_requirements='Need regular updates and communication throughout the project.',
+                status='in-progress',
+                priority='high',
+                estimated_cost=35000,
+                actual_cost=12000,
+                progress=45
+            )
+            inquiry_created = True
+        if not inquiry_created:
+            inquiry.client_name = f"{client.first_name} {client.last_name}"
+            inquiry.client_phone = client.phone or ''
+            inquiry.project_description = template['description']
+            inquiry.project_type = template['type']
+            inquiry.budget = template['budget']
+            inquiry.timeline = '3-6 months'
+            inquiry.additional_requirements = 'Need regular updates and communication throughout the project.'
+            inquiry.status = 'in-progress'
+            inquiry.priority = 'high'
+            inquiry.estimated_cost = 35000
+            inquiry.actual_cost = 12000
+            inquiry.progress = 45
+            inquiry.save()
+            print(f'○ Exists: {inquiry.project_title}')
+        else:
+            print(f'✓ Created: {inquiry.project_title}')
         
         # Link client account
-        ClientAccount.objects.get_or_create(
+        client_account, created = ClientAccount.objects.get_or_create(
             user=client,
-            project_inquiry_id=inquiry.id,
-            defaults={'auto_generated': False}
+            defaults={
+                'project_inquiry_id': inquiry.id,
+                'auto_generated': False
+            }
         )
+        if not created:
+            updated_fields = []
+            if client_account.project_inquiry_id != inquiry.id:
+                client_account.project_inquiry_id = inquiry.id
+                updated_fields.append('project_inquiry_id')
+            if client_account.auto_generated:
+                client_account.auto_generated = False
+                updated_fields.append('auto_generated')
+            if updated_fields:
+                client_account.save(update_fields=updated_fields)
         
-        print(f'✓ Created: {inquiry.project_title}')
+        if client_account.project_inquiry_id != inquiry.id:
+            client_account.project_inquiry_id = inquiry.id
+            client_account.save(update_fields=['project_inquiry_id'])
+        
     
     # Create tasks
     print('\n[4] Creating Tasks...')
@@ -176,32 +222,58 @@ def main():
     
     for inquiry in inquiries[:2]:
         for task_title in task_templates[:3]:
-            Task.objects.create(
+            task, task_created = Task.objects.get_or_create(
                 inquiry=inquiry,
                 title=task_title,
-                description=f'Complete {task_title} for the project.',
-                status='in-progress',
-                assigned_to='admin',
-                priority='medium'
+                defaults={
+                    'description': f'Complete {task_title} for the project.',
+                    'status': 'in-progress',
+                    'assigned_to': 'admin',
+                    'priority': 'medium'
+                }
             )
-        print(f'✓ Created tasks for: {inquiry.project_title}')
+            if not task_created:
+                task.description = f'Complete {task_title} for the project.'
+                task.status = 'in-progress'
+                task.assigned_to = 'admin'
+                task.priority = 'medium'
+                task.save()
+        print(f'✓ Ensured tasks for: {inquiry.project_title}')
     
     # Create notifications
     print('\n[5] Creating Notifications...')
-    Notification.objects.create(
-        title='New Project Inquiry',
-        message='John Smith submitted a new project inquiry for E-commerce Platform Development',
-        type='info',
-        category='inquiry',
-        is_read=False
-    )
-    Notification.objects.create(
-        title='Task Completed',
-        message='Database Design and Setup has been completed',
-        type='success',
-        category='task',
-        is_read=False
-    )
+    for title, defaults in [
+        (
+            'New Project Inquiry',
+            {
+                'message': 'John Smith submitted a new project inquiry for E-commerce Platform Development',
+                'type': 'info',
+                'category': 'inquiry',
+                'is_read': False
+            }
+        ),
+        (
+            'Task Completed',
+            {
+                'message': 'Database Design and Setup has been completed',
+                'type': 'success',
+                'category': 'task',
+                'is_read': False
+            }
+        ),
+    ]:
+        notifications = Notification.objects.filter(title=title).order_by('-created_at')
+        if notifications.exists():
+            primary = notifications.first()
+            # Update message data in case defaults changed
+            for key, value in defaults.items():
+                setattr(primary, key, value)
+            primary.save()
+            duplicates = notifications.exclude(pk=primary.pk)
+            if duplicates.exists():
+                duplicates.delete()
+        else:
+            Notification.objects.create(title=title, **defaults)
     print('✓ Created test notifications')
     
     # Summary
@@ -219,7 +291,7 @@ def main():
     print('=' * 60)
     print('\n📋 Admin Login:')
     print('   Username: ludmil')
-    print('   Password: Maitland@2025')
+    print('   Password: Maitland@2026')
     
     print('\n📋 Client Logins:')
     for client in created_clients:

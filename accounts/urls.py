@@ -8,6 +8,8 @@ urlpatterns = [
     path('login/', views.user_login, name='user_login'),
     path('register/', views.user_register, name='user_register'),
     path('logout/', views.user_logout, name='user_logout'),
+    path('verify-token/', views.verify_token, name='verify_token'),
+    path('get-user/', views.get_user_by_token, name='get_user_by_token'),
     
     # Password management
     path('forgot-password/', views.forgot_password, name='forgot_password'),

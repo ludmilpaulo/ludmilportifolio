@@ -22,6 +22,7 @@ from .models import (
     ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification
 )
 from accounts.models import CustomUser, PasswordResetToken, ClientAccount
+from testimonials.models import Testimonial
 from .serializers import (
     InformationSerializer, CompetenceSerializer, EducationSerializer, ExperienceSerializer,
     ProjectSerializer, MessageSerializer, ProjectInquirySerializer, InquiryMessageSerializer,
@@ -480,17 +481,24 @@ def get_analytics(request):
         
         # Get total counts
         total_projects = Project.objects.count()
-        total_testimonials = Notification.objects.filter(category='general').count() or 0
+        total_testimonials = Testimonial.objects.count()
         total_inquiries = ProjectInquiry.objects.count()
         total_tasks = Task.objects.count()
         
         # Get recent activity
-        recent_projects = Project.objects.filter(created_at__gte=last_30_days).count()
+        if hasattr(Project, 'created_at'):
+            recent_projects = Project.objects.filter(created_at__gte=last_30_days).count()
+            old_projects = Project.objects.filter(
+                created_at__lt=last_30_days,
+                created_at__gte=last_60_days
+            ).count()
+        else:
+            recent_projects = 0
+            old_projects = 0
         recent_inquiries = ProjectInquiry.objects.filter(created_at__gte=last_30_days).count()
         recent_tasks = Task.objects.filter(created_at__gte=last_30_days).count()
         
         # Calculate changes
-        old_projects = Project.objects.filter(created_at__lt=last_30_days, created_at__gte=last_60_days).count()
         projects_change = ((recent_projects - old_projects) / old_projects * 100) if old_projects > 0 else 0
         
         old_inquiries = ProjectInquiry.objects.filter(created_at__lt=last_30_days, created_at__gte=last_60_days).count()

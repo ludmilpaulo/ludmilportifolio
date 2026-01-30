@@ -82,6 +82,8 @@ class Project(models.Model):
     github = models.URLField()
     status = models.IntegerField(choices=STATUS_CHOICES, verbose_name='stado')
     show_in_slider = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.title
