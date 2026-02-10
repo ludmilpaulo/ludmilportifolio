@@ -10,18 +10,18 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ludmilportifolio.settings')
 django.setup()
 
-from information.models import CustomUser
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 def create_test_users():
     """Create test admin and client users"""
     
     # Create admin user
-    admin_user, created = CustomUser.objects.get_or_create(
+    admin_user, created = User.objects.get_or_create(
         username='admin',
         defaults={
             'email': 'admin@ludmilpaulo.com',
-            'password': make_password('admin123'),
             'user_type': 'admin',
             'first_name': 'Ludmil',
             'last_name': 'Paulo',
@@ -31,21 +31,22 @@ def create_test_users():
             'is_verified': True
         }
     )
+    admin_user.set_password('admin123')
+    admin_user.save()
     
     if created:
-        print("✅ Admin user created successfully!")
+        print("[OK] Admin user created successfully!")
         print(f"   Username: admin")
         print(f"   Password: admin123")
         print(f"   Email: admin@ludmilpaulo.com")
     else:
-        print("ℹ️  Admin user already exists")
+        print("Admin user already exists")
     
     # Create test client user
-    client_user, created = CustomUser.objects.get_or_create(
+    client_user, created = User.objects.get_or_create(
         username='client_test',
         defaults={
             'email': 'client@example.com',
-            'password': make_password('client123'),
             'user_type': 'client',
             'first_name': 'Test',
             'last_name': 'Client',
@@ -53,16 +54,18 @@ def create_test_users():
             'is_verified': True
         }
     )
+    client_user.set_password('client123')
+    client_user.save()
     
     if created:
-        print("✅ Test client user created successfully!")
+        print("[OK] Test client user created successfully!")
         print(f"   Username: client_test")
         print(f"   Password: client123")
         print(f"   Email: client@example.com")
     else:
-        print("ℹ️  Test client user already exists")
+        print("Test client user already exists")
     
-    print("\n🎯 Test users ready for authentication testing!")
+    print("\nTest users ready for authentication testing!")
     print("   Admin Login: admin / admin123")
     print("   Client Login: client_test / client123")
 

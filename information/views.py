@@ -238,7 +238,7 @@ def create_project_inquiry(request):
                 ''',
                 settings.DEFAULT_FROM_EMAIL,
                 [data.get('clientEmail')],
-                fail_silently=False,
+                fail_silently=True,  # Don't fail inquiry creation if email fails (e.g. local dev)
             )
             client_account.credentials_sent = True
             client_account.save()
