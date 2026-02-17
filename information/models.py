@@ -285,12 +285,18 @@ class Document(models.Model):
     ]
     
     DRAFT = 'draft'
+    # Backwards-compatible status (older UI used just "pending-signature")
     PENDING_SIGNATURE = 'pending-signature'
+    # New 2-step signature workflow
+    PENDING_ADMIN_SIGNATURE = 'pending-admin-signature'
+    PENDING_CLIENT_SIGNATURE = 'pending-client-signature'
     SIGNED = 'signed'
     EXPIRED = 'expired'
     
     STATUS_CHOICES = [
         (DRAFT, 'Draft'),
+        (PENDING_ADMIN_SIGNATURE, 'Pending Admin Signature'),
+        (PENDING_CLIENT_SIGNATURE, 'Pending Client Signature'),
         (PENDING_SIGNATURE, 'Pending Signature'),
         (SIGNED, 'Signed'),
         (EXPIRED, 'Expired'),
@@ -299,10 +305,18 @@ class Document(models.Model):
     inquiry = models.ForeignKey(ProjectInquiry, on_delete=models.CASCADE, related_name='documents')
     title = models.CharField(max_length=200)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=DRAFT)
-    download_url = models.URLField()
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default=DRAFT)
+    download_url = models.URLField(blank=True, null=True)
+    content = models.TextField(blank=True, null=True, help_text="Rich text content of the document")
+    file = models.FileField(upload_to='documents/', blank=True, null=True, help_text="Uploaded document file")
+    # Legacy single-signature fields (kept for compatibility)
     signed_at = models.DateTimeField(blank=True, null=True)
     signed_by = models.CharField(max_length=100, blank=True, null=True)
+    # New dual-signature fields
+    admin_signed_at = models.DateTimeField(blank=True, null=True)
+    admin_signed_by = models.CharField(max_length=100, blank=True, null=True)
+    client_signed_at = models.DateTimeField(blank=True, null=True)
+    client_signed_by = models.CharField(max_length=100, blank=True, null=True)
     expires_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
