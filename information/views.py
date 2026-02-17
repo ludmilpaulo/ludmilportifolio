@@ -191,30 +191,19 @@ def my_info(request):
         
         projects = []
         try:
-            # Use defer() to explicitly exclude created_at/updated_at fields that don't exist in production DB
+            # First try using defer() to exclude created_at/updated_at
             projects_queryset = Project.objects.filter(show_in_slider=True).order_by('-id')
-            # Defer the fields that don't exist in production database
             try:
+                # Try to defer the fields that don't exist
                 projects_queryset = projects_queryset.defer('created_at', 'updated_at')
-            except Exception:
-                # If defer fails, use only() to select only fields that exist
-                projects_queryset = projects_queryset.only(
-                    'id', 'title', 'slug', 'description', 'image', 
-                    'demo', 'github', 'status', 'show_in_slider'
-                )
-            
-            projects = ProjectSerializer(
-                projects_queryset,
-                many=True,
-                context={"request": request}
-            ).data
-        except Exception as e:
-            print(f"Error serializing projects: {str(e)}")
-            import traceback
-            print(traceback.format_exc())
-            # If serializer fails due to missing columns, use values() to get dict (bypasses model fields)
-            try:
-                projects_queryset = Project.objects.filter(show_in_slider=True).order_by('-id')
+                projects = ProjectSerializer(
+                    projects_queryset,
+                    many=True,
+                    context={"request": request}
+                ).data
+            except Exception as defer_error:
+                # If defer fails (columns don't exist), use values() to bypass model fields entirely
+                print(f"defer() failed, using values() approach: {str(defer_error)}")
                 projects_data = list(projects_queryset.values(
                     'id', 'title', 'slug', 'description', 'image', 
                     'demo', 'github', 'status', 'show_in_slider'
@@ -238,10 +227,10 @@ def my_info(request):
                         for tool in project_obj.tools.all()
                     ]
                     projects.append(project_data)
-            except Exception as e2:
-                print(f"Alternative serialization also failed: {str(e2)}")
-                import traceback
-                print(traceback.format_exc())
+        except Exception as e:
+            print(f"Error serializing projects: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
         
         info = []
         try:
