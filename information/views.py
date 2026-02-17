@@ -147,47 +147,67 @@ class NotificationViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationSerializer
     
     
+@csrf_exempt
 def my_info(request):
     try:
         # Ensure request has proper host for URL building
-        if not hasattr(request, 'META') or 'HTTP_HOST' not in request.META:
-            # Set default host for production
-            if not hasattr(request, 'META'):
-                request.META = {}
-            if 'HTTP_HOST' not in request.META:
-                request.META['HTTP_HOST'] = 'ludmil.pythonanywhere.com'
-            if 'wsgi.url_scheme' not in request.META:
-                request.META['wsgi.url_scheme'] = 'https'
+        if not hasattr(request, 'META'):
+            request.META = {}
+        if 'HTTP_HOST' not in request.META:
+            request.META['HTTP_HOST'] = 'ludmil.pythonanywhere.com'
+        if 'wsgi.url_scheme' not in request.META:
+            request.META['wsgi.url_scheme'] = 'https'
         
-        competences = CompetenceSerializer(
-            Competence.objects.all().order_by('id'),
-            many=True,
-            context={"request": request}
-        ).data
+        # Serialize each queryset with error handling
+        competences = []
+        try:
+            competences = CompetenceSerializer(
+                Competence.objects.all().order_by('id'),
+                many=True,
+                context={"request": request}
+            ).data
+        except Exception as e:
+            print(f"Error serializing competences: {str(e)}")
         
-        education = EducationSerializer(
-            Education.objects.all().order_by('-id'),
-            many=True,
-            context={"request": request}
-        ).data
+        education = []
+        try:
+            education = EducationSerializer(
+                Education.objects.all().order_by('-id'),
+                many=True,
+                context={"request": request}
+            ).data
+        except Exception as e:
+            print(f"Error serializing education: {str(e)}")
         
-        experiences = ExperienceSerializer(
-            Experience.objects.all().order_by('-id'),
-            many=True,
-            context={"request": request}
-        ).data
+        experiences = []
+        try:
+            experiences = ExperienceSerializer(
+                Experience.objects.all().order_by('-id'),
+                many=True,
+                context={"request": request}
+            ).data
+        except Exception as e:
+            print(f"Error serializing experiences: {str(e)}")
         
-        projects = ProjectSerializer(
-            Project.objects.filter(show_in_slider=True).order_by('-id'),
-            many=True,
-            context={"request": request}
-        ).data
+        projects = []
+        try:
+            projects = ProjectSerializer(
+                Project.objects.filter(show_in_slider=True).order_by('-id'),
+                many=True,
+                context={"request": request}
+            ).data
+        except Exception as e:
+            print(f"Error serializing projects: {str(e)}")
         
-        info = InformationSerializer(
-            Information.objects.all(),
-            many=True,
-            context={"request": request}
-        ).data
+        info = []
+        try:
+            info = InformationSerializer(
+                Information.objects.all(),
+                many=True,
+                context={"request": request}
+            ).data
+        except Exception as e:
+            print(f"Error serializing info: {str(e)}")
 
         return JsonResponse({
             "competences": competences,
