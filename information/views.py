@@ -191,14 +191,17 @@ def my_info(request):
         
         projects = []
         try:
-            # Use only() to explicitly select fields that exist in the database
-            # Exclude created_at and updated_at as they may not exist in production DB
+            # Use defer() to explicitly exclude created_at/updated_at fields that don't exist in production DB
             projects_queryset = Project.objects.filter(show_in_slider=True).order_by('-id')
-            # Use only() to select specific fields, excluding created_at/updated_at
-            projects_queryset = projects_queryset.only(
-                'id', 'title', 'slug', 'description', 'image', 
-                'demo', 'github', 'status', 'show_in_slider'
-            )
+            # Defer the fields that don't exist in production database
+            try:
+                projects_queryset = projects_queryset.defer('created_at', 'updated_at')
+            except Exception:
+                # If defer fails, use only() to select only fields that exist
+                projects_queryset = projects_queryset.only(
+                    'id', 'title', 'slug', 'description', 'image', 
+                    'demo', 'github', 'status', 'show_in_slider'
+                )
             
             projects = ProjectSerializer(
                 projects_queryset,
@@ -209,7 +212,7 @@ def my_info(request):
             print(f"Error serializing projects: {str(e)}")
             import traceback
             print(traceback.format_exc())
-            # If serializer fails due to missing columns, try using values() to get dict
+            # If serializer fails due to missing columns, use values() to get dict (bypasses model fields)
             try:
                 projects_queryset = Project.objects.filter(show_in_slider=True).order_by('-id')
                 projects_data = list(projects_queryset.values(
