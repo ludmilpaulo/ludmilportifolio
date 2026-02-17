@@ -192,7 +192,14 @@ def my_info(request):
         projects = []
         try:
             # Use only() to explicitly select fields that exist in the database
+            # Exclude created_at and updated_at as they may not exist in production DB
             projects_queryset = Project.objects.filter(show_in_slider=True).order_by('-id')
+            # Use only() to select specific fields, excluding created_at/updated_at
+            projects_queryset = projects_queryset.only(
+                'id', 'title', 'slug', 'description', 'image', 
+                'demo', 'github', 'status', 'show_in_slider'
+            )
+            
             projects = ProjectSerializer(
                 projects_queryset,
                 many=True,
@@ -202,6 +209,36 @@ def my_info(request):
             print(f"Error serializing projects: {str(e)}")
             import traceback
             print(traceback.format_exc())
+            # If serializer fails due to missing columns, try using values() to get dict
+            try:
+                projects_queryset = Project.objects.filter(show_in_slider=True).order_by('-id')
+                projects_data = list(projects_queryset.values(
+                    'id', 'title', 'slug', 'description', 'image', 
+                    'demo', 'github', 'status', 'show_in_slider'
+                ))
+                # Manually serialize with image URLs and tools
+                projects = []
+                for project_data in projects_data:
+                    project_obj = Project.objects.get(id=project_data['id'])
+                    # Get image URL
+                    if project_obj.image:
+                        try:
+                            image_url = request.build_absolute_uri(project_obj.image.url)
+                        except Exception:
+                            from django.conf import settings
+                            base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
+                            image_url = f"{base_url}{project_obj.image.url}"
+                        project_data['image'] = image_url
+                    # Get tools
+                    project_data['tools'] = [
+                        CompetenceSerializer(tool, context={"request": request}).data 
+                        for tool in project_obj.tools.all()
+                    ]
+                    projects.append(project_data)
+            except Exception as e2:
+                print(f"Alternative serialization also failed: {str(e2)}")
+                import traceback
+                print(traceback.format_exc())
         
         info = []
         try:
