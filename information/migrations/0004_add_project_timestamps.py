@@ -6,13 +6,82 @@ from django.db import migrations, models
 from django.utils import timezone
 
 
-def set_created_at_for_existing_projects(apps, schema_editor):
-    """Set created_at to now() for existing projects that don't have it"""
-    Project = apps.get_model('information', 'Project')
-    # Update all existing projects to have created_at = now if it's None
-    for project in Project.objects.filter(created_at__isnull=True):
-        project.created_at = timezone.now()
-        project.save(update_fields=['created_at'])
+def add_timestamp_columns_if_missing(apps, schema_editor):
+    """Add created_at and updated_at columns if they don't exist"""
+    db_alias = schema_editor.connection.alias
+    with schema_editor.connection.cursor() as cursor:
+        # Check if created_at column exists
+        cursor.execute("""
+            SELECT COUNT(*) 
+            FROM information_schema.COLUMNS 
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'information_project'
+            AND COLUMN_NAME = 'created_at'
+        """)
+        created_at_exists = cursor.fetchone()[0] > 0
+        
+        # Check if updated_at column exists
+        cursor.execute("""
+            SELECT COUNT(*) 
+            FROM information_schema.COLUMNS 
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'information_project'
+            AND COLUMN_NAME = 'updated_at'
+        """)
+        updated_at_exists = cursor.fetchone()[0] > 0
+        
+        # Add created_at if missing
+        if not created_at_exists:
+            cursor.execute("""
+                ALTER TABLE information_project 
+                ADD COLUMN created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+            """)
+            # Update existing records to have a timestamp
+            cursor.execute("""
+                UPDATE information_project 
+                SET created_at = NOW() 
+                WHERE created_at IS NULL OR created_at = '0000-00-00 00:00:00'
+            """)
+        
+        # Add updated_at if missing
+        if not updated_at_exists:
+            cursor.execute("""
+                ALTER TABLE information_project 
+                ADD COLUMN updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
+            """)
+            # Update existing records
+            cursor.execute("""
+                UPDATE information_project 
+                SET updated_at = NOW() 
+                WHERE updated_at IS NULL OR updated_at = '0000-00-00 00:00:00'
+            """)
+
+
+def remove_timestamp_columns(apps, schema_editor):
+    """Reverse migration - remove columns if they exist"""
+    db_alias = schema_editor.connection.alias
+    with schema_editor.connection.cursor() as cursor:
+        # Check and remove created_at
+        cursor.execute("""
+            SELECT COUNT(*) 
+            FROM information_schema.COLUMNS 
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'information_project'
+            AND COLUMN_NAME = 'created_at'
+        """)
+        if cursor.fetchone()[0] > 0:
+            cursor.execute("ALTER TABLE information_project DROP COLUMN created_at")
+        
+        # Check and remove updated_at
+        cursor.execute("""
+            SELECT COUNT(*) 
+            FROM information_schema.COLUMNS 
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'information_project'
+            AND COLUMN_NAME = 'updated_at'
+        """)
+        if cursor.fetchone()[0] > 0:
+            cursor.execute("ALTER TABLE information_project DROP COLUMN updated_at")
 
 
 class Migration(migrations.Migration):
@@ -22,6 +91,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(
+            add_timestamp_columns_if_missing,
+            remove_timestamp_columns,
+        ),
+        # Also add the fields to Django's model state
         migrations.AddField(
             model_name='project',
             name='created_at',
@@ -32,9 +106,7 @@ class Migration(migrations.Migration):
             name='updated_at',
             field=models.DateTimeField(auto_now=True, null=True),
         ),
-        # Set default values for existing records
-        migrations.RunPython(set_created_at_for_existing_projects, migrations.RunPython.noop),
-        # Make fields non-nullable after setting defaults
+        # Make them non-nullable in Django's state
         migrations.AlterField(
             model_name='project',
             name='created_at',
