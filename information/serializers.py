@@ -101,7 +101,34 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = '__all__'
+        # Explicitly list fields to avoid issues with missing database columns
+        fields = [
+            'id', 'title', 'slug', 'description', 'image', 'tools', 
+            'demo', 'github', 'status', 'show_in_slider'
+        ]
+        # Try to include created_at/updated_at if they exist, but don't fail if they don't
+        extra_kwargs = {
+            'created_at': {'required': False, 'allow_null': True, 'read_only': True},
+            'updated_at': {'required': False, 'allow_null': True, 'read_only': True},
+        }
+    
+    def to_representation(self, instance):
+        """Override to handle missing created_at/updated_at fields gracefully"""
+        data = super().to_representation(instance)
+        # Check if created_at/updated_at exist in the database
+        try:
+            if hasattr(instance, 'created_at') and instance.created_at:
+                data['created_at'] = instance.created_at.isoformat() if instance.created_at else None
+        except Exception:
+            pass
+        
+        try:
+            if hasattr(instance, 'updated_at') and instance.updated_at:
+                data['updated_at'] = instance.updated_at.isoformat() if instance.updated_at else None
+        except Exception:
+            pass
+        
+        return data
     
     def get_image(self, obj):
         if obj.image:

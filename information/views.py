@@ -191,13 +191,17 @@ def my_info(request):
         
         projects = []
         try:
+            # Use only() to explicitly select fields that exist in the database
+            projects_queryset = Project.objects.filter(show_in_slider=True).order_by('-id')
             projects = ProjectSerializer(
-                Project.objects.filter(show_in_slider=True).order_by('-id'),
+                projects_queryset,
                 many=True,
                 context={"request": request}
             ).data
         except Exception as e:
             print(f"Error serializing projects: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
         
         info = []
         try:
