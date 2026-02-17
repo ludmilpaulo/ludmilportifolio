@@ -16,6 +16,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 FRONTEND_URL = 'https://www.ludmilpaulo.co.za'
+BASE_URL = 'https://ludmil.pythonanywhere.com'
 
 # Application definition
 

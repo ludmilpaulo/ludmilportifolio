@@ -148,43 +148,69 @@ class NotificationViewSet(viewsets.ModelViewSet):
     
     
 def my_info(request):
-    competences = CompetenceSerializer(
-        Competence.objects.all().order_by('id'),
-        many=True,
-        context={"request": request}
-    ).data
-    
-    education = EducationSerializer(
-        Education.objects.all().order_by('-id'),
-        many=True,
-        context={"request": request}
-    ).data
-    
-    experiences = ExperienceSerializer(
-        Experience.objects.all().order_by('-id'),
-        many=True,
-        context={"request": request}
-    ).data
-    
-    projects = ProjectSerializer(
-        Project.objects.filter(show_in_slider=True).order_by('-id'),
-        many=True,
-        context={"request": request}
-    ).data
-    
-    info = InformationSerializer(
-        Information.objects.all(),
-        many=True,
-        context={"request": request}
-    ).data
+    try:
+        # Ensure request has proper host for URL building
+        if not hasattr(request, 'META') or 'HTTP_HOST' not in request.META:
+            # Set default host for production
+            if not hasattr(request, 'META'):
+                request.META = {}
+            if 'HTTP_HOST' not in request.META:
+                request.META['HTTP_HOST'] = 'ludmil.pythonanywhere.com'
+            if 'wsgi.url_scheme' not in request.META:
+                request.META['wsgi.url_scheme'] = 'https'
+        
+        competences = CompetenceSerializer(
+            Competence.objects.all().order_by('id'),
+            many=True,
+            context={"request": request}
+        ).data
+        
+        education = EducationSerializer(
+            Education.objects.all().order_by('-id'),
+            many=True,
+            context={"request": request}
+        ).data
+        
+        experiences = ExperienceSerializer(
+            Experience.objects.all().order_by('-id'),
+            many=True,
+            context={"request": request}
+        ).data
+        
+        projects = ProjectSerializer(
+            Project.objects.filter(show_in_slider=True).order_by('-id'),
+            many=True,
+            context={"request": request}
+        ).data
+        
+        info = InformationSerializer(
+            Information.objects.all(),
+            many=True,
+            context={"request": request}
+        ).data
 
-    return JsonResponse({
-        "competences": competences,
-        "experiences": experiences,
-        "projects": projects,
-        "info": info,
-        "education": education
-    })
+        return JsonResponse({
+            "competences": competences,
+            "experiences": experiences,
+            "projects": projects,
+            "info": info,
+            "education": education
+        })
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error in my_info: {str(e)}")
+        print(f"Traceback: {error_trace}")
+        # Return a more user-friendly error response
+        return JsonResponse({
+            "error": "Internal server error",
+            "message": str(e),
+            "competences": [],
+            "experiences": [],
+            "projects": [],
+            "info": [],
+            "education": []
+        }, status=500)
 
 
 import json
