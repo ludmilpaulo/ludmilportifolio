@@ -191,42 +191,41 @@ def my_info(request):
         
         projects = []
         try:
-            # First try using defer() to exclude created_at/updated_at
-            projects_queryset = Project.objects.filter(show_in_slider=True).order_by('-id')
-            try:
-                # Try to defer the fields that don't exist
-                projects_queryset = projects_queryset.defer('created_at', 'updated_at')
-                projects = ProjectSerializer(
-                    projects_queryset,
-                    many=True,
-                    context={"request": request}
-                ).data
-            except Exception as defer_error:
-                # If defer fails (columns don't exist), use values() to bypass model fields entirely
-                print(f"defer() failed, using values() approach: {str(defer_error)}")
-                projects_data = list(projects_queryset.values(
-                    'id', 'title', 'slug', 'description', 'image', 
-                    'demo', 'github', 'status', 'show_in_slider'
-                ))
-                # Manually serialize with image URLs and tools
-                projects = []
-                for project_data in projects_data:
-                    project_obj = Project.objects.get(id=project_data['id'])
-                    # Get image URL
-                    if project_obj.image:
-                        try:
-                            image_url = request.build_absolute_uri(project_obj.image.url)
-                        except Exception:
-                            from django.conf import settings
-                            base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
-                            image_url = f"{base_url}{project_obj.image.url}"
-                        project_data['image'] = image_url
-                    # Get tools
-                    project_data['tools'] = [
-                        CompetenceSerializer(tool, context={"request": request}).data 
-                        for tool in project_obj.tools.all()
-                    ]
-                    projects.append(project_data)
+            # Use values() to bypass model field access entirely - this avoids accessing created_at/updated_at
+            # Get project IDs first
+            project_ids = list(Project.objects.filter(show_in_slider=True).order_by('-id').values_list('id', flat=True))
+            
+            # Get project data using values() - this returns dicts, not model instances
+            projects_data = list(Project.objects.filter(id__in=project_ids).values(
+                'id', 'title', 'slug', 'description', 'image', 
+                'demo', 'github', 'status', 'show_in_slider'
+            ))
+            
+            # Manually serialize with image URLs and tools
+            projects = []
+            for project_data in projects_data:
+                # Get the project instance only for image URL and tools (many-to-many)
+                project_obj = Project.objects.get(id=project_data['id'])
+                
+                # Get image URL
+                if project_obj.image:
+                    try:
+                        image_url = request.build_absolute_uri(project_obj.image.url)
+                    except Exception:
+                        from django.conf import settings
+                        base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
+                        image_url = f"{base_url}{project_obj.image.url}"
+                    project_data['image'] = image_url
+                else:
+                    project_data['image'] = None
+                
+                # Get tools (many-to-many relationship)
+                project_data['tools'] = [
+                    CompetenceSerializer(tool, context={"request": request}).data 
+                    for tool in project_obj.tools.all()
+                ]
+                
+                projects.append(project_data)
         except Exception as e:
             print(f"Error serializing projects: {str(e)}")
             import traceback
