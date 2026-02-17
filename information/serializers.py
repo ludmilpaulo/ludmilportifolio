@@ -59,8 +59,12 @@ class CompetenceSerializer(serializers.ModelSerializer):
                 try:
                     return request.build_absolute_uri(obj.image.url)
                 except Exception:
-                    return obj.image.url if hasattr(obj.image, 'url') else str(obj.image)
-            return obj.image.url if hasattr(obj.image, 'url') else str(obj.image)
+                    from django.conf import settings
+                    base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
+                    return f"{base_url}{obj.image.url}" if hasattr(obj.image, 'url') else str(obj.image)
+            from django.conf import settings
+            base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
+            return f"{base_url}{obj.image.url}" if hasattr(obj.image, 'url') else str(obj.image)
         return None
 
 class EducationSerializer(serializers.ModelSerializer):
@@ -106,8 +110,12 @@ class ProjectSerializer(serializers.ModelSerializer):
                 try:
                     return request.build_absolute_uri(obj.image.url)
                 except Exception:
-                    return obj.image.url if hasattr(obj.image, 'url') else str(obj.image)
-            return obj.image.url if hasattr(obj.image, 'url') else str(obj.image)
+                    from django.conf import settings
+                    base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
+                    return f"{base_url}{obj.image.url}" if hasattr(obj.image, 'url') else str(obj.image)
+            from django.conf import settings
+            base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
+            return f"{base_url}{obj.image.url}" if hasattr(obj.image, 'url') else str(obj.image)
         return None
 
 class MessageSerializer(serializers.ModelSerializer):
