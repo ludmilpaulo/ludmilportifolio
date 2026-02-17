@@ -205,7 +205,15 @@ def my_info(request):
             projects = []
             for project_data in projects_data:
                 # Get the project instance only for image URL and tools (many-to-many)
-                project_obj = Project.objects.get(id=project_data['id'])
+                # Use only() to avoid loading created_at/updated_at fields
+                try:
+                    project_obj = Project.objects.only(
+                        'id', 'title', 'slug', 'description', 'image', 
+                        'demo', 'github', 'status', 'show_in_slider'
+                    ).get(id=project_data['id'])
+                except Exception:
+                    # If only() fails, try without it (shouldn't happen but just in case)
+                    project_obj = Project.objects.get(id=project_data['id'])
                 
                 # Get image URL
                 if project_obj.image:
