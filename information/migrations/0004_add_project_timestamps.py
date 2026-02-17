@@ -98,20 +98,27 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Use RunPython to add columns via raw SQL (handles existing columns gracefully)
-        migrations.RunPython(
-            add_timestamp_columns_if_missing,
-            remove_timestamp_columns,
-        ),
-        # Register fields in Django's model state (these won't create columns if they already exist)
-        migrations.AddField(
-            model_name='project',
-            name='created_at',
-            field=models.DateTimeField(auto_now_add=True),
-        ),
-        migrations.AddField(
-            model_name='project',
-            name='updated_at',
-            field=models.DateTimeField(auto_now=True),
+        # Use SeparateDatabaseAndState to handle DB changes separately from Django state
+        migrations.SeparateDatabaseAndState(
+            # Database operations: Add columns via raw SQL (checks for existence)
+            database_operations=[
+                migrations.RunPython(
+                    add_timestamp_columns_if_missing,
+                    remove_timestamp_columns,
+                ),
+            ],
+            # State operations: Update Django's model state (doesn't touch DB)
+            state_operations=[
+                migrations.AddField(
+                    model_name='project',
+                    name='created_at',
+                    field=models.DateTimeField(auto_now_add=True),
+                ),
+                migrations.AddField(
+                    model_name='project',
+                    name='updated_at',
+                    field=models.DateTimeField(auto_now=True),
+                ),
+            ],
         ),
     ]
