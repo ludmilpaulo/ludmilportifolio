@@ -6,6 +6,7 @@ app_name = 'accounts'
 urlpatterns = [
     # Authentication endpoints
     path('login/', views.user_login, name='user_login'),
+    path('google/', views.google_login, name='google_login'),
     path('register/', views.user_register, name='user_register'),
     path('logout/', views.user_logout, name='user_logout'),
     path('verify-token/', views.verify_token, name='verify_token'),

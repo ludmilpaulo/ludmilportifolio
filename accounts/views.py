@@ -6,8 +6,13 @@ from django.contrib.auth import authenticate, login, logout
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
+import json
 import random
+import re
 import string
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 from .models import CustomUser, PasswordResetToken, UserProfile, LoginLog
 from .serializers import (
     CustomUserSerializer, LoginSerializer, RegisterSerializer,
@@ -77,6 +82,150 @@ def user_login(request):
             'error': str(e),
             'error_code': 'server_error'
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+def _client_ip(request):
+    return (
+        request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+        or request.META.get('REMOTE_ADDR', '')
+        or '0.0.0.0'
+    )
+
+
+def _login_payload(request, user):
+    token, _created = Token.objects.get_or_create(user=user)
+    LoginLog.objects.create(
+        user=user,
+        ip_address=_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', ''),
+        is_successful=True,
+    )
+    return {
+        'success': True,
+        'token': token.key,
+        'user': CustomUserSerializer(user).data,
+    }
+
+
+def _verify_google_id_token(credential, client_id):
+    query = urlencode({'id_token': credential})
+    req = Request(
+        f'https://oauth2.googleapis.com/tokeninfo?{query}',
+        headers={'Accept': 'application/json'},
+    )
+    try:
+        with urlopen(req, timeout=10) as response:
+            payload = json.loads(response.read().decode())
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+        raise ValueError('invalid_token') from exc
+
+    if not isinstance(payload, dict):
+        raise ValueError('invalid_token')
+    if payload.get('aud') != client_id:
+        raise ValueError('wrong_audience')
+    if str(payload.get('iss')) not in ('accounts.google.com', 'https://accounts.google.com'):
+        raise ValueError('invalid_issuer')
+    if str(payload.get('email_verified')).lower() != 'true':
+        raise ValueError('email_unverified')
+    email = str(payload.get('email') or '').strip().lower()
+    if not email or '@' not in email:
+        raise ValueError('email_missing')
+    payload['email'] = email
+    return payload
+
+
+def _username_from_email(email):
+    local = email.split('@', 1)[0].lower()
+    base = re.sub(r'[^a-z0-9_]', '', local)[:20] or 'client'
+    candidate = base
+    suffix = 1
+    while CustomUser.objects.filter(username=candidate).exists():
+        suffix += 1
+        candidate = f'{base}{suffix}'[:150]
+    return candidate
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def google_login(request):
+    """Sign in with a Google ID token. New accounts are clients, never admins."""
+    client_id = getattr(settings, 'GOOGLE_OAUTH_CLIENT_ID', '') or ''
+    if not client_id:
+        return Response(
+            {'success': False, 'error': 'Google sign-in is not configured', 'error_code': 'google_not_configured'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    credential = str(request.data.get('credential') or '').strip()
+    role = str(request.data.get('role') or 'client').strip().lower()
+    if role not in ('admin', 'client'):
+        role = 'client'
+    if not credential:
+        return Response(
+            {'success': False, 'error': 'Google credential is required', 'error_code': 'invalid_token'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        profile = _verify_google_id_token(credential, client_id)
+    except ValueError as exc:
+        code = str(exc)
+        message = 'Google sign-in could not be verified. Please try again.'
+        if code == 'email_unverified':
+            message = 'That Google account has not verified its email address.'
+        return Response(
+            {'success': False, 'error': message, 'error_code': code},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    email = profile['email']
+    user = CustomUser.objects.filter(email__iexact=email).first()
+    if user is None and role == 'admin':
+        return Response(
+            {
+                'success': False,
+                'error': 'No admin account uses this Google email.',
+                'error_code': 'not_admin',
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    if user is not None and role == 'admin' and user.user_type != 'admin':
+        return Response(
+            {
+                'success': False,
+                'error': 'This Google account is not an admin.',
+                'error_code': 'not_admin',
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    if user is not None and role == 'client' and user.user_type != 'client':
+        return Response(
+            {
+                'success': False,
+                'error': 'This Google account is an admin. Use the admin sign-in.',
+                'error_code': 'use_admin_login',
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    if user is not None and not user.is_active:
+        return Response(
+            {'success': False, 'error': 'This account is disabled.', 'error_code': 'account_disabled'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    if user is None:
+        user = CustomUser(
+            username=_username_from_email(email),
+            email=email,
+            first_name=str(profile.get('given_name') or '')[:150],
+            last_name=str(profile.get('family_name') or '')[:150],
+            user_type='client',
+            is_verified=True,
+        )
+        user.set_unusable_password()
+        user.save()
+
+    return Response(_login_payload(request, user))
 
 
 @api_view(['POST'])

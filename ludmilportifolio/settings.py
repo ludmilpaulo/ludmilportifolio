@@ -17,6 +17,10 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 FRONTEND_URL = 'https://www.ludmilpaulo.co.za'
 BASE_URL = 'https://ludmil.pythonanywhere.com'
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get(
+    "GOOGLE_OAUTH_CLIENT_ID",
+    "900159626507-ggs3d25j48b42k65k2q5mm0krd0uooer.apps.googleusercontent.com",
+)
 
 # Application definition
 
