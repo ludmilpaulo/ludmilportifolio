@@ -79,6 +79,24 @@ class Certificate(models.Model):
         return f"{self.title} — {self.issuer}"
 
 
+class PageVisit(models.Model):
+    path = models.CharField(max_length=200)
+    country_code = models.CharField(max_length=8, blank=True)
+    country_name = models.CharField(max_length=80, blank=True)
+    visitor_hash = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["country_code", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.path} ({self.country_name or 'Unknown'})"
+
+
 class Experience(models.Model):
     title = models.CharField(max_length=50, blank=False, null=False)
     stack = models.ManyToManyField(Competence, related_name='stack',blank=True)

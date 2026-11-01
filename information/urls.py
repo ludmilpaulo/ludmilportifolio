@@ -10,7 +10,7 @@ from .views import (
     add_message, create_invoice, update_invoice_status, get_notifications, update_notification, get_analytics,
     user_login, forgot_password, reset_password,
     get_all_projects, create_project, update_project, delete_project,
-    update_inquiry, delete_inquiry
+    update_inquiry, delete_inquiry, track_visit, certificates
 )
 
 router = DefaultRouter()
@@ -55,6 +55,8 @@ urlpatterns = [
     path('get-notifications/', get_notifications, name='get_notifications'),
     path('update-notification/', update_notification, name='update_notification'),
     path('get-analytics/', get_analytics, name='get_analytics'),
+    path('track-visit/', track_visit, name='track_visit'),
+    path('certificates/', certificates, name='certificates'),
     
     # Authentication endpoints
     path('login/', user_login, name='user_login'),

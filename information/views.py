@@ -1,15 +1,22 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.core.mail import send_mail
+from django.core.cache import cache
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Count, Q
+from django.db.models.functions import TruncDate
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.hashers import make_password
+import hashlib
+import json
 import uuid
 import random
 import string
+from datetime import datetime, timedelta
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
@@ -21,7 +28,7 @@ from django.views.decorators.http import require_http_methods
 from .models import (
     Information, Competence, Education, Experience, Project, Message,
     ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification,
-    Certificate,
+    Certificate, PageVisit,
 )
 from accounts.models import CustomUser, PasswordResetToken, ClientAccount
 from testimonials.models import Testimonial
@@ -33,6 +40,20 @@ from .serializers import (
     ClientAccountSerializer, LoginSerializer, ForgotPasswordSerializer, ResetPasswordSerializer,
     CertificateSerializer,
 )
+
+
+INQUIRY_PROJECT_TYPES = {
+    "web-development": ProjectInquiry.WEB_APP,
+    "web-app": ProjectInquiry.WEB_APP,
+    "mobile-app": ProjectInquiry.MOBILE_APP,
+    "e-commerce": ProjectInquiry.E_COMMERCE,
+    "dashboard": ProjectInquiry.WEB_APP,
+    "game-development": ProjectInquiry.OTHER,
+    "education-platform": ProjectInquiry.WEB_APP,
+    "business-automation": ProjectInquiry.OTHER,
+    "desktop-app": ProjectInquiry.DESKTOP_APP,
+    "other": ProjectInquiry.OTHER,
+}
 
 
 def _parse_bool(value, default=False):
@@ -69,6 +90,214 @@ def _map_project_status(value):
     if s in ["in-progress", "inprogress", "in progress"]:
         return Project.in_progress
     return Project.live
+
+
+def _client_ip(request):
+    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "") or ""
+
+
+def _country_for_ip(ip):
+    if not ip or ip in ("127.0.0.1", "::1", "localhost"):
+        return "", "Local"
+    cached = cache.get(f"geo:{ip}")
+    if cached:
+        return cached
+    result = ("", "Unknown")
+    try:
+        req = Request(
+            f"https://ipwho.is/{ip}",
+            headers={"Accept": "application/json", "User-Agent": "ludmil-portfolio"},
+        )
+        with urlopen(req, timeout=1.5) as response:
+            payload = json.loads(response.read().decode())
+        if isinstance(payload, dict) and payload.get("success"):
+            code = str(payload.get("country_code") or "")[:8]
+            name = str(payload.get("country") or "Unknown")[:80]
+            result = (code, name or "Unknown")
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValueError):
+        result = ("", "Unknown")
+    cache.set(f"geo:{ip}", result, 60 * 60 * 24)
+    return result
+
+
+def _visitor_hash(ip, user_agent):
+    raw = f"{ip}|{user_agent}".encode("utf-8", errors="ignore")
+    return hashlib.sha256(raw).hexdigest()
+
+
+def _admin_from_request(request):
+    header = request.META.get("HTTP_AUTHORIZATION", "")
+    if header.startswith("Bearer "):
+        key = header[7:].strip()
+    elif header.startswith("Token "):
+        key = header[6:].strip()
+    else:
+        return None
+    if not key:
+        return None
+    try:
+        token = Token.objects.select_related("user").get(key=key)
+    except Token.DoesNotExist:
+        return None
+    user = token.user
+    if not user.is_active or getattr(user, "user_type", "") != "admin":
+        return None
+    return user
+
+
+def _percent_change(current, previous):
+    if previous == 0:
+        return 100.0 if current else 0.0
+    return round((current - previous) / previous * 100, 1)
+
+
+def _visit_analytics(range_key):
+    days = {"7d": 7, "30d": 30, "90d": 90, "1y": 365}.get(range_key, 30)
+    now = timezone.now()
+    start = now - timedelta(days=days)
+    previous_start = start - timedelta(days=days)
+    current = PageVisit.objects.filter(created_at__gte=start)
+    previous = PageVisit.objects.filter(created_at__gte=previous_start, created_at__lt=start)
+    total_views = current.count()
+    unique_visitors = current.values("visitor_hash").distinct().count()
+    previous_views = previous.count()
+    previous_visitors = previous.values("visitor_hash").distinct().count()
+
+    grouped = {
+        row["day"]: row
+        for row in current.annotate(day=TruncDate("created_at"))
+        .values("day")
+        .annotate(views=Count("id"), visitors=Count("visitor_hash", distinct=True))
+    }
+    series = []
+    today = timezone.localdate()
+    first_day = today - timedelta(days=days - 1)
+    for offset in range(days):
+        day = first_day + timedelta(days=offset)
+        row = grouped.get(day)
+        series.append({
+            "date": day.isoformat(),
+            "views": row["views"] if row else 0,
+            "visitors": row["visitors"] if row else 0,
+        })
+
+    countries = []
+    for row in (
+        current.values("country_code", "country_name")
+        .annotate(views=Count("id"), visitors=Count("visitor_hash", distinct=True))
+        .order_by("-views")[:12]
+    ):
+        countries.append({
+            "code": row["country_code"] or "",
+            "name": row["country_name"] or "Unknown",
+            "views": row["views"],
+            "visitors": row["visitors"],
+        })
+
+    return {
+        "totalViews": total_views,
+        "uniqueVisitors": unique_visitors,
+        "viewsChange": _percent_change(total_views, previous_views),
+        "visitorsChange": _percent_change(unique_visitors, previous_visitors),
+        "series": series,
+        "countries": countries,
+    }
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def track_visit(request):
+    """Record one public page view. Dashboard and API paths are ignored."""
+    path = str(request.data.get("path") or "").split("?", 1)[0].strip()
+    if not path.startswith("/") or len(path) > 200:
+        return Response({"success": True, "recorded": False})
+    if path.startswith("/dashboard") or path.startswith("/api") or path.startswith("/_next"):
+        return Response({"success": True, "recorded": False})
+    user_agent = request.META.get("HTTP_USER_AGENT", "")
+    agent = user_agent.lower()
+    if any(marker in agent for marker in ("bot", "spider", "crawler", "preview", "slurp", "wget", "curl")):
+        return Response({"success": True, "recorded": False})
+    ip = _client_ip(request)
+    code, name = _country_for_ip(ip)
+    PageVisit.objects.create(
+        path=path,
+        country_code=code,
+        country_name=name,
+        visitor_hash=_visitor_hash(ip, user_agent),
+    )
+    return Response({"success": True, "recorded": True})
+
+
+@api_view(["GET", "POST"])
+@permission_classes([AllowAny])
+def certificates(request):
+    """Admin list and create for portfolio certificates."""
+    if _admin_from_request(request) is None:
+        return Response(
+            {"success": False, "error": "Admin sign-in required"},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+    if request.method == "GET":
+        rows = Certificate.objects.all().order_by("sort_order", "-issued_on")
+        data = CertificateSerializer(rows, many=True, context={"request": request}).data
+        return Response({"success": True, "data": data})
+
+    title = str(request.data.get("title") or "").strip()
+    issuer = str(request.data.get("issuer") or "").strip()
+    issued_raw = str(request.data.get("issued_on") or request.data.get("issuedOn") or "").strip()
+    if not title or not issuer or not issued_raw:
+        return Response(
+            {"success": False, "error": "Title, issuer, and issued date are required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    try:
+        issued_on = datetime.strptime(issued_raw, "%Y-%m-%d").date()
+    except ValueError:
+        return Response(
+            {"success": False, "error": "Issued date must be YYYY-MM-DD"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    expires_on = None
+    expires_raw = str(request.data.get("expires_on") or request.data.get("expiresOn") or "").strip()
+    if expires_raw:
+        try:
+            expires_on = datetime.strptime(expires_raw, "%Y-%m-%d").date()
+        except ValueError:
+            return Response(
+                {"success": False, "error": "Expiry date must be YYYY-MM-DD"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+    category = str(request.data.get("category") or Certificate.PROFESSIONAL).strip()
+    if category not in {Certificate.COURSE, Certificate.PROFESSIONAL, Certificate.AWARD}:
+        category = Certificate.PROFESSIONAL
+    try:
+        sort_order = int(request.data.get("sort_order") or request.data.get("sortOrder") or 0)
+    except (TypeError, ValueError):
+        sort_order = 0
+    certificate = Certificate(
+        title=title[:200],
+        issuer=issuer[:200],
+        issued_on=issued_on,
+        expires_on=expires_on,
+        category=category,
+        credential_id=str(request.data.get("credential_id") or request.data.get("credentialId") or "")[:120],
+        credential_url=str(request.data.get("credential_url") or request.data.get("credentialUrl") or ""),
+        description=str(request.data.get("description") or ""),
+        sort_order=max(sort_order, 0),
+        is_published=_parse_bool(request.data.get("is_published", request.data.get("isPublished")), default=True),
+    )
+    image = request.FILES.get("image") if hasattr(request, "FILES") else None
+    document = request.FILES.get("document") if hasattr(request, "FILES") else None
+    if image:
+        certificate.image = image
+    if document:
+        certificate.document = document
+    certificate.save()
+    data = CertificateSerializer(certificate, context={"request": request}).data
+    return Response({"success": True, "data": data}, status=status.HTTP_201_CREATED)
 
 
 def _parse_tools_ids(data):
@@ -205,7 +434,7 @@ def my_info(request):
         try:
             # Use values() to bypass model field access entirely - this avoids accessing created_at/updated_at
             # Get project IDs first
-            project_ids = list(Project.objects.filter(show_in_slider=True).order_by('-id').values_list('id', flat=True))
+            project_ids = list(Project.objects.all().order_by('-id').values_list('id', flat=True))
             
             # Get project data using values() - this returns dicts, not model instances
             projects_data = list(Project.objects.filter(id__in=project_ids).values(
@@ -342,7 +571,7 @@ def create_project_inquiry(request):
             client_phone=data.get('clientPhone', ''),
             project_title=data.get('projectTitle'),
             project_description=data.get('projectDescription'),
-            project_type=data.get('projectType', 'web-app'),
+            project_type=INQUIRY_PROJECT_TYPES.get(str(data.get('projectType') or '').strip(), ProjectInquiry.WEB_APP),
             budget=data.get('budget', ''),
             timeline=data.get('timeline', ''),
             additional_requirements=data.get('additionalRequirements', ''),
@@ -1049,13 +1278,17 @@ def get_analytics(request):
                 'message': notification.message
             })
         
+        range_key = str(request.query_params.get("range") or "30d")
+        visits = _visit_analytics(range_key)
         analytics_data = {
-            'totalViews': 15420,
-            'uniqueVisitors': 8930,
+            'totalViews': visits['totalViews'],
+            'uniqueVisitors': visits['uniqueVisitors'],
+            'series': visits['series'],
+            'countries': visits['countries'],
             'projects': total_projects,
             'testimonials': total_testimonials,
-            'viewsChange': 12.5,
-            'visitorsChange': 8.3,
+            'viewsChange': visits['viewsChange'],
+            'visitorsChange': visits['visitorsChange'],
             'projectsChange': round(projects_change, 1),
             'testimonialsChange': round(inquiries_change, 1),
             'inquiries': {

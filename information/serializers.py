@@ -109,6 +109,7 @@ class CertificateSerializer(serializers.ModelSerializer):
             "document",
             "description",
             "sort_order",
+            "is_published",
         )
 
     def get_image(self, obj):
