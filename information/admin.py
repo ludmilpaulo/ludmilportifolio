@@ -1,8 +1,9 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import (
     Information, Competence, Education, Experience, Project, Message,
     ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, 
-    Document, TeamMember, Notification
+    Document, TeamMember, Notification, Certificate,
 )
 
 @admin.register(Information)
@@ -16,6 +17,46 @@ class CompetenceAdmin(admin.ModelAdmin):
 @admin.register(Education)
 class EducationAdmin(admin.ModelAdmin):
     list_display = ('title', 'the_year')
+
+@admin.register(Certificate)
+class CertificateAdmin(admin.ModelAdmin):
+    list_display = (
+        "image_preview",
+        "title",
+        "issuer",
+        "category",
+        "issued_on",
+        "is_published",
+        "sort_order",
+    )
+    list_filter = ("category", "is_published")
+    search_fields = ("title", "issuer", "credential_id")
+    list_editable = ("is_published", "sort_order")
+    readonly_fields = ("image_preview",)
+    fields = (
+        "title",
+        "issuer",
+        "category",
+        "issued_on",
+        "expires_on",
+        "credential_id",
+        "credential_url",
+        "description",
+        "image",
+        "image_preview",
+        "document",
+        "sort_order",
+        "is_published",
+    )
+
+    @admin.display(description="Preview")
+    def image_preview(self, obj):
+        if obj.pk and obj.image:
+            return format_html(
+                '<img src="{}" alt="" style="height:48px;width:72px;object-fit:cover;border-radius:6px;" />',
+                obj.image.url,
+            )
+        return "—"
 
 @admin.register(Experience)
 class ExperienceAdmin(admin.ModelAdmin):

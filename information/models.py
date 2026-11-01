@@ -48,6 +48,37 @@ class Education(models.Model):
         return self.title
 
 
+class Certificate(models.Model):
+    COURSE = "course"
+    PROFESSIONAL = "professional"
+    AWARD = "award"
+
+    CATEGORY_CHOICES = [
+        (COURSE, "Course"),
+        (PROFESSIONAL, "Professional"),
+        (AWARD, "Award"),
+    ]
+
+    title = models.CharField(max_length=200)
+    issuer = models.CharField(max_length=200)
+    issued_on = models.DateField()
+    expires_on = models.DateField(blank=True, null=True)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default=PROFESSIONAL)
+    credential_id = models.CharField(max_length=120, blank=True)
+    credential_url = models.URLField(blank=True)
+    image = models.ImageField(upload_to="certificates/", blank=True, null=True)
+    document = models.FileField(upload_to="certificates/documents/", blank=True, null=True)
+    description = models.TextField(blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["sort_order", "-issued_on"]
+
+    def __str__(self):
+        return f"{self.title} — {self.issuer}"
+
+
 class Experience(models.Model):
     title = models.CharField(max_length=50, blank=False, null=False)
     stack = models.ManyToManyField(Competence, related_name='stack',blank=True)

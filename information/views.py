@@ -20,7 +20,8 @@ from django.views.decorators.http import require_http_methods
 
 from .models import (
     Information, Competence, Education, Experience, Project, Message,
-    ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification
+    ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification,
+    Certificate,
 )
 from accounts.models import CustomUser, PasswordResetToken, ClientAccount
 from testimonials.models import Testimonial
@@ -29,7 +30,8 @@ from .serializers import (
     ProjectSerializer, MessageSerializer, ProjectInquirySerializer, InquiryMessageSerializer,
     TaskSerializer, InvoiceSerializer, InvoiceItemSerializer, DocumentSerializer,
     TeamMemberSerializer, NotificationSerializer, CustomUserSerializer, PasswordResetTokenSerializer,
-    ClientAccountSerializer, LoginSerializer, ForgotPasswordSerializer, ResetPasswordSerializer
+    ClientAccountSerializer, LoginSerializer, ForgotPasswordSerializer, ResetPasswordSerializer,
+    CertificateSerializer,
 )
 
 
@@ -178,6 +180,16 @@ def my_info(request):
             ).data
         except Exception as e:
             print(f"Error serializing education: {str(e)}")
+
+        certificates = []
+        try:
+            certificates = CertificateSerializer(
+                Certificate.objects.filter(is_published=True).order_by("sort_order", "-issued_on"),
+                many=True,
+                context={"request": request}
+            ).data
+        except Exception as e:
+            print(f"Error serializing certificates: {str(e)}")
         
         experiences = []
         try:
@@ -254,7 +266,8 @@ def my_info(request):
             "experiences": experiences,
             "projects": projects,
             "info": info,
-            "education": education
+            "education": education,
+            "certificates": certificates,
         })
     except Exception as e:
         import traceback
@@ -269,7 +282,8 @@ def my_info(request):
             "experiences": [],
             "projects": [],
             "info": [],
-            "education": []
+            "education": [],
+            "certificates": [],
         }, status=500)
 
 

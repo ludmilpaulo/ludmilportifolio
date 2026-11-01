@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from .models import (
     Information, Competence, Education, Experience, Project, Message,
-    ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification
+    ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification,
+    Certificate,
 )
 from accounts.models import CustomUser, PasswordResetToken, ClientAccount
 
@@ -71,6 +72,50 @@ class EducationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Education
         fields = '__all__'
+
+
+def _absolute_file_url(request, file_field):
+    if not file_field:
+        return None
+    if request:
+        try:
+            return request.build_absolute_uri(file_field.url)
+        except Exception:
+            pass
+    from django.conf import settings
+    base_url = getattr(settings, "BASE_URL", "https://ludmil.pythonanywhere.com").rstrip("/")
+    url = file_field.url if hasattr(file_field, "url") else str(file_field)
+    if str(url).startswith("http"):
+        return url
+    return f"{base_url}{url}"
+
+
+class CertificateSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    document = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Certificate
+        fields = (
+            "id",
+            "title",
+            "issuer",
+            "issued_on",
+            "expires_on",
+            "category",
+            "credential_id",
+            "credential_url",
+            "image",
+            "document",
+            "description",
+            "sort_order",
+        )
+
+    def get_image(self, obj):
+        return _absolute_file_url(self.context.get("request"), obj.image)
+
+    def get_document(self, obj):
+        return _absolute_file_url(self.context.get("request"), obj.document)
 
 class ExperienceSerializer(serializers.ModelSerializer):
     stack = CompetenceSerializer(many=True, read_only=True)

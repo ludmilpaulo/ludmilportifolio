@@ -106,7 +106,23 @@ def seed():
     )
     u.set_password('admin123')
     u.save()
-    print("  - Users (admin / admin123)")
+
+    client, _ = User.objects.get_or_create(
+        username='client_test',
+        defaults={
+            'email': 'client@ludmilpaulo.co.za',
+            'user_type': 'client',
+            'is_staff': False,
+            'is_superuser': False,
+            'is_verified': True,
+        }
+    )
+    client.email = 'client@ludmilpaulo.co.za'
+    client.user_type = 'client'
+    client.is_verified = True
+    client.set_password('client123')
+    client.save()
+    print("  - Users (admin / admin123, client_test / client123)")
 
     print("Done. Local data ready.")
 

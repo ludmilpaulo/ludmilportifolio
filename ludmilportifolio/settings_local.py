@@ -10,3 +10,6 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+
+BASE_URL = "http://localhost:8002"
+FRONTEND_URL = "http://localhost:3000"

@@ -6,7 +6,13 @@ from django.db import migrations, models
 
 
 def add_timestamp_columns_if_missing(apps, schema_editor):
-    """Add created_at and updated_at columns if they don't exist using raw SQL"""
+    """Add created_at and updated_at columns if they don't exist using raw SQL.
+
+    SQLite databases created from 0001 already have these columns. The raw SQL
+    below is MySQL-only (information_schema / DATABASE()).
+    """
+    if schema_editor.connection.vendor != "mysql":
+        return
     db_alias = schema_editor.connection.alias
     with schema_editor.connection.cursor() as cursor:
         # Check if created_at column exists
@@ -66,6 +72,8 @@ def add_timestamp_columns_if_missing(apps, schema_editor):
 
 def remove_timestamp_columns(apps, schema_editor):
     """Reverse migration - remove columns if they exist"""
+    if schema_editor.connection.vendor != "mysql":
+        return
     db_alias = schema_editor.connection.alias
     with schema_editor.connection.cursor() as cursor:
         # Check and remove created_at
