@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    InformationViewSet, CompetenceViewSet, EducationViewSet, ExperienceViewSet,
+    InformationViewSet, ResumeViewSet, CompetenceViewSet, EducationViewSet, ExperienceViewSet,
     ProjectViewSet, MessageViewSet, ProjectInquiryViewSet, InquiryMessageViewSet,
     TaskViewSet, InvoiceViewSet, InvoiceItemViewSet, DocumentViewSet,
     TeamMemberViewSet, NotificationViewSet, submit_message, my_info,
@@ -10,11 +10,12 @@ from .views import (
     add_message, create_invoice, update_invoice_status, get_notifications, update_notification, get_analytics,
     user_login, forgot_password, reset_password,
     get_all_projects, create_project, update_project, delete_project,
-    update_inquiry, delete_inquiry, track_visit, certificates
+    update_inquiry, delete_inquiry, track_visit, certificates, certificate_detail
 )
 
 router = DefaultRouter()
 router.register(r'information', InformationViewSet)
+router.register(r'resumes', ResumeViewSet)
 router.register(r'competence', CompetenceViewSet)
 router.register(r'education', EducationViewSet)
 router.register(r'experience', ExperienceViewSet)
@@ -57,6 +58,7 @@ urlpatterns = [
     path('get-analytics/', get_analytics, name='get_analytics'),
     path('track-visit/', track_visit, name='track_visit'),
     path('certificates/', certificates, name='certificates'),
+    path('certificates/<int:pk>/', certificate_detail, name='certificate_detail'),
     
     # Authentication endpoints
     path('login/', user_login, name='user_login'),

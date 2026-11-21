@@ -29,6 +29,20 @@ class Information(models.Model):
         return self.name_complete
 
 
+class Resume(models.Model):
+    title = models.CharField(max_length=120)
+    file = models.FileField(upload_to="cv/")
+    sort_order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["sort_order", "title"]
+
+    def __str__(self):
+        return self.title
+
+
 class Competence(models.Model):
     title = models.CharField(max_length=50, blank=False, null=False)
     percentage = models.CharField(max_length=50, blank=False, null=False)

@@ -23,12 +23,13 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
+from .permissions import IsAdminOrReadOnly, admin_user_from_request
 from django.views.decorators.http import require_http_methods
 
 from .models import (
     Information, Competence, Education, Experience, Project, Message,
     ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification,
-    Certificate, PageVisit,
+    Certificate, PageVisit, Resume,
 )
 from accounts.models import CustomUser, PasswordResetToken, ClientAccount
 from testimonials.models import Testimonial
@@ -38,7 +39,7 @@ from .serializers import (
     TaskSerializer, InvoiceSerializer, InvoiceItemSerializer, DocumentSerializer,
     TeamMemberSerializer, NotificationSerializer, CustomUserSerializer, PasswordResetTokenSerializer,
     ClientAccountSerializer, LoginSerializer, ForgotPasswordSerializer, ResetPasswordSerializer,
-    CertificateSerializer,
+    CertificateSerializer, ResumeSerializer,
 )
 
 
@@ -129,23 +130,7 @@ def _visitor_hash(ip, user_agent):
 
 
 def _admin_from_request(request):
-    header = request.META.get("HTTP_AUTHORIZATION", "")
-    if header.startswith("Bearer "):
-        key = header[7:].strip()
-    elif header.startswith("Token "):
-        key = header[6:].strip()
-    else:
-        return None
-    if not key:
-        return None
-    try:
-        token = Token.objects.select_related("user").get(key=key)
-    except Token.DoesNotExist:
-        return None
-    user = token.user
-    if not user.is_active or getattr(user, "user_type", "") != "admin":
-        return None
-    return user
+    return admin_user_from_request(request)
 
 
 def _percent_change(current, previous):
@@ -300,6 +285,80 @@ def certificates(request):
     return Response({"success": True, "data": data}, status=status.HTTP_201_CREATED)
 
 
+def _certificate_from_payload(certificate, data, files):
+    title = str(data.get("title") or "").strip()
+    issuer = str(data.get("issuer") or "").strip()
+    issued_raw = str(data.get("issued_on") or data.get("issuedOn") or "").strip()
+    if not title or not issuer or not issued_raw:
+        return "Title, issuer, and issued date are required"
+    try:
+        issued_on = datetime.strptime(issued_raw, "%Y-%m-%d").date()
+    except ValueError:
+        return "Issued date must be YYYY-MM-DD"
+    expires_on = None
+    expires_raw = str(data.get("expires_on") or data.get("expiresOn") or "").strip()
+    if expires_raw:
+        try:
+            expires_on = datetime.strptime(expires_raw, "%Y-%m-%d").date()
+        except ValueError:
+            return "Expiry date must be YYYY-MM-DD"
+    category = str(data.get("category") or Certificate.PROFESSIONAL).strip()
+    if category not in {Certificate.COURSE, Certificate.PROFESSIONAL, Certificate.AWARD}:
+        category = Certificate.PROFESSIONAL
+    try:
+        sort_order = int(data.get("sort_order") or data.get("sortOrder") or 0)
+    except (TypeError, ValueError):
+        sort_order = 0
+    certificate.title = title[:200]
+    certificate.issuer = issuer[:200]
+    certificate.issued_on = issued_on
+    certificate.expires_on = expires_on
+    certificate.category = category
+    certificate.credential_id = str(data.get("credential_id") or data.get("credentialId") or "")[:120]
+    certificate.credential_url = str(data.get("credential_url") or data.get("credentialUrl") or "")
+    certificate.description = str(data.get("description") or "")
+    certificate.sort_order = max(sort_order, 0)
+    certificate.is_published = _parse_bool(
+        data.get("is_published", data.get("isPublished")),
+        default=certificate.is_published,
+    )
+    image = files.get("image") if files is not None else None
+    document = files.get("document") if files is not None else None
+    if image:
+        certificate.image = image
+    if document:
+        certificate.document = document
+    return None
+
+
+@api_view(["PUT", "PATCH", "DELETE"])
+@permission_classes([AllowAny])
+def certificate_detail(request, pk):
+    """Admin edit and delete for one certificate."""
+    if _admin_from_request(request) is None:
+        return Response(
+            {"success": False, "error": "Admin sign-in required"},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+    try:
+        certificate = Certificate.objects.get(pk=pk)
+    except Certificate.DoesNotExist:
+        return Response({"success": False, "error": "Certificate not found"}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == "DELETE":
+        certificate.delete()
+        return Response({"success": True})
+    error = _certificate_from_payload(
+        certificate,
+        request.data,
+        request.FILES if hasattr(request, "FILES") else None,
+    )
+    if error:
+        return Response({"success": False, "error": error}, status=status.HTTP_400_BAD_REQUEST)
+    certificate.save()
+    data = CertificateSerializer(certificate, context={"request": request}).data
+    return Response({"success": True, "data": data})
+
+
 def _parse_tools_ids(data):
     """
     Accept tools as:
@@ -322,26 +381,43 @@ def _parse_tools_ids(data):
 class InformationViewSet(viewsets.ModelViewSet):
     queryset = Information.objects.all()
     serializer_class = InformationSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+class ResumeViewSet(viewsets.ModelViewSet):
+    queryset = Resume.objects.all()
+    serializer_class = ResumeSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if admin_user_from_request(self.request) is None:
+            return queryset.filter(is_published=True)
+        return queryset
 
 class CompetenceViewSet(viewsets.ModelViewSet):
     queryset = Competence.objects.all()
     serializer_class = CompetenceSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
 class EducationViewSet(viewsets.ModelViewSet):
     queryset = Education.objects.all()
     serializer_class = EducationSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
 class ExperienceViewSet(viewsets.ModelViewSet):
     queryset = Experience.objects.all()
     serializer_class = ExperienceSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
 class MessageViewSet(viewsets.ModelViewSet):
-    queryset = Message.objects.all()
+    queryset = Message.objects.all().order_by("-send_time")
     serializer_class = MessageSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
 
 # New ViewSets for dashboard functionality
@@ -409,6 +485,16 @@ def my_info(request):
             ).data
         except Exception as e:
             print(f"Error serializing education: {str(e)}")
+
+        resumes = []
+        try:
+            resumes = ResumeSerializer(
+                Resume.objects.filter(is_published=True),
+                many=True,
+                context={"request": request}
+            ).data
+        except Exception as e:
+            print(f"Error serializing resumes: {str(e)}")
 
         certificates = []
         try:
@@ -497,6 +583,7 @@ def my_info(request):
             "info": info,
             "education": education,
             "certificates": certificates,
+            "resumes": resumes,
         })
     except Exception as e:
         import traceback
@@ -513,6 +600,7 @@ def my_info(request):
             "info": [],
             "education": [],
             "certificates": [],
+            "resumes": [],
         }, status=500)
 
 

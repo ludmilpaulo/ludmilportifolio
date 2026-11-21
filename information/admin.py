@@ -3,12 +3,19 @@ from django.utils.html import format_html
 from .models import (
     Information, Competence, Education, Experience, Project, Message,
     ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, 
-    Document, TeamMember, Notification, Certificate,
+    Document, TeamMember, Notification, Certificate, Resume,
 )
 
 @admin.register(Information)
 class InformationAdmin(admin.ModelAdmin):
     list_display = ('name_complete', 'email', 'phone')
+
+@admin.register(Resume)
+class ResumeAdmin(admin.ModelAdmin):
+    list_display = ("title", "is_published", "sort_order", "created_at")
+    list_filter = ("is_published",)
+    search_fields = ("title",)
+    list_editable = ("is_published", "sort_order")
 
 @admin.register(Competence)
 class CompetenceAdmin(admin.ModelAdmin):

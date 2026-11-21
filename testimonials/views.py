@@ -3,6 +3,7 @@ from .models import Testimonial
 from .serializers import TestimonialSerializer
 from django.core.mail import send_mail
 from django.conf import settings
+from information.permissions import IsAdminOrReadOnly
 
 class TestimonialListCreateView(generics.ListCreateAPIView):
     queryset = Testimonial.objects.all().order_by('-created_at')
@@ -22,3 +23,9 @@ class TestimonialListCreateView(generics.ListCreateAPIView):
             )
         except Exception as e:
             print("Could not send testimonial email:", e)
+
+
+class TestimonialDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Testimonial.objects.all()
+    serializer_class = TestimonialSerializer
+    permission_classes = [IsAdminOrReadOnly]

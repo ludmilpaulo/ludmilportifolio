@@ -2,71 +2,42 @@ from rest_framework import serializers
 from .models import (
     Information, Competence, Education, Experience, Project, Message,
     ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, Document, TeamMember, Notification,
-    Certificate,
+    Certificate, Resume,
 )
 from accounts.models import CustomUser, PasswordResetToken, ClientAccount
 
 class InformationSerializer(serializers.ModelSerializer):
-    avatar = serializers.SerializerMethodField()
-    cv = serializers.SerializerMethodField()
-    
     class Meta:
         model = Information
         fields = '__all__'
-    
-    def get_avatar(self, obj):
-        if obj.avatar:
-            request = self.context.get('request')
-            if request:
-                try:
-                    return request.build_absolute_uri(obj.avatar.url)
-                except Exception:
-                    # Fallback to relative URL or absolute URL with settings
-                    from django.conf import settings
-                    base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
-                    return f"{base_url}{obj.avatar.url}" if hasattr(obj.avatar, 'url') else str(obj.avatar)
-            # Fallback when no request context
-            from django.conf import settings
-            base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
-            return f"{base_url}{obj.avatar.url}" if hasattr(obj.avatar, 'url') else str(obj.avatar)
-        return None
-    
-    def get_cv(self, obj):
-        if obj.cv:
-            request = self.context.get('request')
-            if request:
-                try:
-                    return request.build_absolute_uri(obj.cv.url)
-                except Exception:
-                    from django.conf import settings
-                    base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
-                    return f"{base_url}{obj.cv.url}" if hasattr(obj.cv, 'url') else str(obj.cv)
-            from django.conf import settings
-            base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
-            return f"{base_url}{obj.cv.url}" if hasattr(obj.cv, 'url') else str(obj.cv)
-        return None
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        data["avatar"] = _absolute_file_url(request, instance.avatar)
+        data["cv"] = _absolute_file_url(request, instance.cv)
+        return data
+
+class ResumeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Resume
+        fields = ("id", "title", "file", "sort_order", "is_published", "created_at")
+        read_only_fields = ("created_at",)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["file"] = _absolute_file_url(self.context.get("request"), instance.file)
+        return data
 
 class CompetenceSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
-    
     class Meta:
         model = Competence
         fields = '__all__'
-    
-    def get_image(self, obj):
-        if obj.image:
-            request = self.context.get('request')
-            if request:
-                try:
-                    return request.build_absolute_uri(obj.image.url)
-                except Exception:
-                    from django.conf import settings
-                    base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
-                    return f"{base_url}{obj.image.url}" if hasattr(obj.image, 'url') else str(obj.image)
-            from django.conf import settings
-            base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
-            return f"{base_url}{obj.image.url}" if hasattr(obj.image, 'url') else str(obj.image)
-        return None
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["image"] = _absolute_file_url(self.context.get("request"), instance.image)
+        return data
 
 class EducationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -120,26 +91,23 @@ class CertificateSerializer(serializers.ModelSerializer):
 
 class ExperienceSerializer(serializers.ModelSerializer):
     stack = CompetenceSerializer(many=True, read_only=True)
-    logo = serializers.SerializerMethodField()
+    stack_ids = serializers.PrimaryKeyRelatedField(
+        source="stack",
+        queryset=Competence.objects.all(),
+        many=True,
+        write_only=True,
+        required=False,
+    )
 
     class Meta:
         model = Experience
         fields = '__all__'
-    
-    def get_logo(self, obj):
-        if obj.logo:
-            request = self.context.get('request')
-            if request:
-                try:
-                    return request.build_absolute_uri(obj.logo.url)
-                except Exception:
-                    from django.conf import settings
-                    base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
-                    return f"{base_url}{obj.logo.url}" if hasattr(obj.logo, 'url') else str(obj.logo)
-            from django.conf import settings
-            base_url = getattr(settings, 'BASE_URL', 'https://ludmil.pythonanywhere.com')
-            return f"{base_url}{obj.logo.url}" if hasattr(obj.logo, 'url') else str(obj.logo)
-        return None
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["logo"] = _absolute_file_url(self.context.get("request"), instance.logo)
+        data.pop("stack_ids", None)
+        return data
 
 class ProjectSerializer(serializers.ModelSerializer):
     tools = CompetenceSerializer(many=True, read_only=True)
