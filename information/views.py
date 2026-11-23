@@ -518,26 +518,41 @@ def my_info(request):
         
         projects = []
         try:
-            # Use values() to bypass model field access entirely - this avoids accessing created_at/updated_at
-            # Get project IDs first
-            project_ids = list(Project.objects.all().order_by('-id').values_list('id', flat=True))
-            
-            # Get project data using values() - this returns dicts, not model instances
-            projects_data = list(Project.objects.filter(id__in=project_ids).values(
-                'id', 'title', 'slug', 'description', 'image', 
-                'demo', 'github', 'status', 'show_in_slider'
-            ))
-            
+            # Use values() to bypass model field access entirely - this avoids accessing created_at/updated_at.
+            # Fall back to the legacy columns if the case-study migration has not been applied yet.
+            field_sets = (
+                (
+                    'id', 'title', 'slug', 'description', 'image',
+                    'demo', 'github', 'status', 'show_in_slider',
+                    'problem', 'role', 'outcomes', 'image_alt',
+                ),
+                (
+                    'id', 'title', 'slug', 'description', 'image',
+                    'demo', 'github', 'status', 'show_in_slider',
+                ),
+            )
+            projects_data = None
+            active_fields = None
+            field_error = None
+            for fields in field_sets:
+                try:
+                    projects_data = list(Project.objects.all().order_by('-id').values(*fields))
+                    active_fields = fields
+                    break
+                except Exception as field_exc:
+                    field_error = field_exc
+            if projects_data is None:
+                raise field_error
+
             # Manually serialize with image URLs and tools
             projects = []
             for project_data in projects_data:
+                for optional in ('problem', 'role', 'outcomes', 'image_alt'):
+                    project_data.setdefault(optional, '')
                 # Get the project instance only for image URL and tools (many-to-many)
                 # Use only() to avoid loading created_at/updated_at fields
                 try:
-                    project_obj = Project.objects.only(
-                        'id', 'title', 'slug', 'description', 'image', 
-                        'demo', 'github', 'status', 'show_in_slider'
-                    ).get(id=project_data['id'])
+                    project_obj = Project.objects.only(*active_fields).get(id=project_data['id'])
                 except Exception:
                     # If only() fails, try without it (shouldn't happen but just in case)
                     project_obj = Project.objects.get(id=project_data['id'])

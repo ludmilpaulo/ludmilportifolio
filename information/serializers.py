@@ -117,8 +117,8 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Project
         # Explicitly list fields - DO NOT include created_at/updated_at as they don't exist in production DB
         fields = [
-            'id', 'title', 'slug', 'description', 'image', 'tools', 
-            'demo', 'github', 'status', 'show_in_slider'
+            'id', 'title', 'slug', 'description', 'image', 'image_alt', 'tools',
+            'demo', 'github', 'status', 'show_in_slider', 'problem', 'role', 'outcomes'
         ]
         # Do NOT include created_at or updated_at in fields list
     

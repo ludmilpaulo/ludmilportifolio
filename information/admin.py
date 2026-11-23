@@ -73,6 +73,11 @@ class ExperienceAdmin(admin.ModelAdmin):
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ('title', 'status', 'show_in_slider')
     prepopulated_fields = {'slug': ('title',)}
+    fieldsets = (
+        (None, {"fields": ("title", "slug", "status", "show_in_slider")}),
+        ("Case study", {"fields": ("problem", "role", "outcomes", "image_alt"), "description": "Shown on the public case study. Leave outcomes blank unless you can verify them. Mark featured work with “show in slider”."}),
+        ("Content", {"fields": ("description", "image", "tools", "demo", "github")}),
+    )
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):

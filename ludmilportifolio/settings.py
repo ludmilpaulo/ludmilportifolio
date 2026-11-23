@@ -15,7 +15,7 @@ SECRET_KEY = "django-insecure-m$u!_fe6zd*o*ej$#tx3_2^ei32gh^064p!j6j7x(9uds%xe48
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-FRONTEND_URL = 'https://www.ludmilpaulo.co.za'
+FRONTEND_URL = 'https://ludmilpaulo.com'
 BASE_URL = 'https://ludmil.pythonanywhere.com'
 GOOGLE_OAUTH_CLIENT_ID = os.environ.get(
     "GOOGLE_OAUTH_CLIENT_ID",
@@ -175,6 +175,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ORIGIN_ALLOW_ALL = True
 
 CORS_ALLOWED_ORIGINS = [
+    'https://ludmilpaulo.com',
+    'https://www.ludmilpaulo.com',
     'https://www.ludmilpaulo.co.za',
     'https://ludmilpaulo.co.za',
     'http://localhost:3000',
