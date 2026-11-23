@@ -511,6 +511,8 @@ class Booking(models.Model):
 
     class Meta:
         ordering = ["-starts_at"]
+        verbose_name = "Meeting"
+        verbose_name_plural = "Meetings"
         indexes = [
             models.Index(fields=["status", "starts_at"]),
         ]

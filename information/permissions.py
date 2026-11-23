@@ -22,6 +22,13 @@ def admin_user_from_request(request):
     return user
 
 
+class IsAdmin(BasePermission):
+    """Signed-in portfolio admins only."""
+
+    def has_permission(self, request, view):
+        return admin_user_from_request(request) is not None
+
+
 class IsAdminOrReadOnly(BasePermission):
     """Public reads stay open. Creates, edits, and deletes require an admin token."""
 

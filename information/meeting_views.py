@@ -11,6 +11,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from .models import AvailabilityWindow, Booking, Information, MeetingType, Notification
+from .permissions import IsAdmin
 from .scheduling import (
     OWNER_TZ,
     active_type,
@@ -80,6 +81,47 @@ def _send_confirmation(booking):
         except Exception:
             pass
     return sent
+
+
+def _send_cancellation(booking):
+    owner = _owner_email()
+    visitor_when = booking.starts_at.astimezone(ZoneInfo(booking.visitor_timezone))
+    owner_when = booking.starts_at.astimezone(ZoneInfo(booking.owner_timezone or OWNER_TZ))
+    body = (
+        f"Hi {booking.name},\n\n"
+        f"Your {booking.meeting_type.name} has been cancelled.\n\n"
+        f"Your time: {visitor_when:%A, %d %B %Y at %H:%M} ({booking.visitor_timezone})\n"
+        f"Cape Town: {owner_when:%A, %d %B %Y at %H:%M} ({booking.owner_timezone})\n\n"
+        "The time is free again. You can book another time from the website.\n\n"
+        "Ludmil Paulo\n"
+    )
+    try:
+        EmailMessage(
+            f"Meeting cancelled: {booking.meeting_type.name}",
+            body,
+            settings.DEFAULT_FROM_EMAIL,
+            [booking.email],
+            reply_to=[owner] if owner else None,
+        ).send(fail_silently=False)
+        return True
+    except Exception:
+        return False
+
+
+def cancel_booking(booking):
+    if booking.status == Booking.CANCELLED:
+        return False
+    booking.status = Booking.CANCELLED
+    booking.save(update_fields=["status", "updated_at"])
+    return True
+
+
+def admin_meeting_payload(booking):
+    payload = booking_payload(booking)
+    payload["id"] = booking.pk
+    payload["manage_url"] = _manage_url(booking.token)
+    payload["created_at"] = iso_z(booking.created_at)
+    return payload
 
 
 def _limited(email):
@@ -225,6 +267,59 @@ def cancel_meeting(request, token):
             booking.status = Booking.CANCELLED
             booking.save(update_fields=["status", "updated_at"])
     return Response({"success": True, "booking": booking_payload(booking)})
+
+
+@api_view(["GET"])
+@permission_classes([IsAdmin])
+def admin_meetings(request):
+    bookings = Booking.objects.select_related("meeting_type").order_by("starts_at")
+    return Response({"meetings": [admin_meeting_payload(booking) for booking in bookings]})
+
+
+@api_view(["POST"])
+@permission_classes([IsAdmin])
+def admin_cancel_meeting(request, booking_id):
+    with transaction.atomic():
+        booking = (
+            Booking.objects.select_for_update()
+            .select_related("meeting_type")
+            .filter(pk=booking_id)
+            .first()
+        )
+        if booking is None:
+            return Response({"success": False, "message": "Meeting not found."}, status=404)
+        changed = cancel_booking(booking)
+    emailed = _send_cancellation(booking) if changed else False
+    return Response(
+        {
+            "success": True,
+            "email_sent": emailed,
+            "message": "Meeting cancelled." if booking.status == Booking.CANCELLED else "Could not cancel the meeting.",
+            "meeting": admin_meeting_payload(booking),
+        }
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsAdmin])
+def admin_resend_meeting(request, booking_id):
+    booking = Booking.objects.select_related("meeting_type").filter(pk=booking_id).first()
+    if booking is None:
+        return Response({"success": False, "message": "Meeting not found."}, status=404)
+    if booking.status != Booking.CONFIRMED:
+        return Response({"success": False, "message": "Cancelled meetings do not get a confirmation email."}, status=400)
+    sent = _send_confirmation(booking)
+    if sent != booking.email_sent:
+        booking.email_sent = sent
+        booking.save(update_fields=["email_sent", "updated_at"])
+    return Response(
+        {
+            "success": True,
+            "email_sent": sent,
+            "message": "Confirmation sent." if sent else "The confirmation email could not be sent.",
+            "meeting": admin_meeting_payload(booking),
+        }
+    )
 
 
 @api_view(["POST"])

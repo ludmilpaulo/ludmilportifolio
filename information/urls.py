@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .meeting_views import (
     meeting_types, meeting_slots, book_meeting, meeting_detail, cancel_meeting, reschedule_meeting,
+    admin_meetings, admin_cancel_meeting, admin_resend_meeting,
 )
 from .views import (
     InformationViewSet, ResumeViewSet, CompetenceViewSet, EducationViewSet, ExperienceViewSet,
@@ -60,6 +61,9 @@ urlpatterns = [
     path('update-notification/', update_notification, name='update_notification'),
     path('get-analytics/', get_analytics, name='get_analytics'),
     path('track-visit/', track_visit, name='track_visit'),
+    path('meetings/admin/', admin_meetings, name='admin_meetings'),
+    path('meetings/admin/<int:booking_id>/cancel/', admin_cancel_meeting, name='admin_cancel_meeting'),
+    path('meetings/admin/<int:booking_id>/resend/', admin_resend_meeting, name='admin_resend_meeting'),
     path('meetings/types/', meeting_types, name='meeting_types'),
     path('meetings/slots/', meeting_slots, name='meeting_slots'),
     path('meetings/book/', book_meeting, name='book_meeting'),

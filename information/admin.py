@@ -1,4 +1,6 @@
-from django.contrib import admin
+from zoneinfo import ZoneInfo
+
+from django.contrib import admin, messages
 from django.utils.html import format_html
 from .models import (
     Information, Competence, Education, Experience, Project, Message,
@@ -148,12 +150,103 @@ class AvailabilityWindowAdmin(admin.ModelAdmin):
     list_filter = ("weekday", "timezone")
 
 
+@admin.action(description="Cancel selected meetings and email the visitor")
+def cancel_selected_meetings(modeladmin, request, queryset):
+    from .meeting_views import _send_cancellation, cancel_booking
+
+    cancelled = 0
+    emailed = 0
+    for booking in queryset.select_related("meeting_type"):
+        if cancel_booking(booking):
+            cancelled += 1
+            if _send_cancellation(booking):
+                emailed += 1
+    modeladmin.message_user(
+        request,
+        f"Cancelled {cancelled} meeting(s). Cancellation emails sent: {emailed}.",
+        messages.SUCCESS,
+    )
+
+
+@admin.action(description="Resend the confirmation email")
+def resend_selected_confirmations(modeladmin, request, queryset):
+    from .meeting_views import _send_confirmation
+
+    sent = 0
+    skipped = 0
+    for booking in queryset.select_related("meeting_type"):
+        if booking.status != Booking.CONFIRMED:
+            skipped += 1
+            continue
+        if _send_confirmation(booking):
+            sent += 1
+            if not booking.email_sent:
+                booking.email_sent = True
+                booking.save(update_fields=["email_sent", "updated_at"])
+    modeladmin.message_user(
+        request,
+        f"Confirmation emails sent: {sent}. Skipped cancelled meetings: {skipped}.",
+        messages.SUCCESS,
+    )
+
+
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ("name", "email", "meeting_type", "starts_at", "visitor_timezone", "status")
+    list_display = (
+        "name",
+        "email",
+        "meeting_type",
+        "cape_town_time",
+        "visitor_timezone",
+        "status",
+        "email_sent",
+        "video_link",
+    )
     list_filter = ("status", "meeting_type")
-    search_fields = ("name", "email", "company")
-    readonly_fields = ("token", "created_at", "updated_at", "video_url")
+    list_select_related = ("meeting_type",)
+    search_fields = ("name", "email", "company", "notes")
+    date_hierarchy = "starts_at"
+    actions = (cancel_selected_meetings, resend_selected_confirmations)
+    readonly_fields = (
+        "token",
+        "created_at",
+        "updated_at",
+        "video_link",
+        "manage_link",
+        "cape_town_time",
+        "email_sent",
+    )
+    fieldsets = (
+        ("Visitor", {"fields": ("name", "email", "company", "notes", "locale")}),
+        ("Meeting", {"fields": ("meeting_type", "status", "starts_at", "ends_at", "buffer_minutes")}),
+        ("Time zones", {"fields": ("cape_town_time", "visitor_timezone", "owner_timezone")}),
+        ("Actions", {"fields": ("video_link", "manage_link", "email_sent")}),
+        ("Record", {"fields": ("token", "created_at", "updated_at")}),
+    )
+
+    @admin.display(description="Cape Town", ordering="starts_at")
+    def cape_town_time(self, obj):
+        zone_name = obj.owner_timezone or "Africa/Johannesburg"
+        try:
+            zone = ZoneInfo(zone_name)
+        except Exception:
+            zone = ZoneInfo("Africa/Johannesburg")
+        return obj.starts_at.astimezone(zone).strftime("%a %d %b %Y, %H:%M")
+
+    @admin.display(description="Video call")
+    def video_link(self, obj):
+        if not obj.video_url:
+            return "—"
+        return format_html('<a href="{}" target="_blank" rel="noopener noreferrer">Join the call</a>', obj.video_url)
+
+    @admin.display(description="Visitor page")
+    def manage_link(self, obj):
+        from .meeting_views import _manage_url
+
+        return format_html(
+            '<a href="{}" target="_blank" rel="noopener noreferrer">Open the visitor page</a>',
+            _manage_url(obj.token),
+        )
 
 
 @admin.register(Notification)
