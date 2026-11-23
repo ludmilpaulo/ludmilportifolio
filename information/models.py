@@ -444,6 +444,81 @@ class Notification(models.Model):
         return f"{self.title} - {self.type}"
 
 
+class MeetingType(models.Model):
+    slug = models.SlugField(max_length=80, unique=True)
+    name = models.CharField(max_length=160)
+    name_pt = models.CharField(max_length=160, blank=True)
+    duration_minutes = models.PositiveIntegerField()
+    buffer_minutes = models.PositiveIntegerField(default=10)
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.duration_minutes} min)"
+
+
+class AvailabilityWindow(models.Model):
+    WEEKDAYS = [
+        (0, "Monday"),
+        (1, "Tuesday"),
+        (2, "Wednesday"),
+        (3, "Thursday"),
+        (4, "Friday"),
+        (5, "Saturday"),
+        (6, "Sunday"),
+    ]
+
+    weekday = models.PositiveSmallIntegerField(choices=WEEKDAYS)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    timezone = models.CharField(max_length=64, default="Africa/Johannesburg")
+
+    class Meta:
+        ordering = ["weekday", "start_time"]
+
+    def __str__(self):
+        return f"{self.get_weekday_display()} {self.start_time:%H:%M}–{self.end_time:%H:%M} ({self.timezone})"
+
+
+class Booking(models.Model):
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
+    STATUS_CHOICES = [
+        (CONFIRMED, "Confirmed"),
+        (CANCELLED, "Cancelled"),
+    ]
+
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    meeting_type = models.ForeignKey(MeetingType, on_delete=models.PROTECT, related_name="bookings")
+    name = models.CharField(max_length=120)
+    email = models.EmailField()
+    company = models.CharField(max_length=160, blank=True)
+    notes = models.TextField(blank=True)
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField()
+    visitor_timezone = models.CharField(max_length=64)
+    owner_timezone = models.CharField(max_length=64, default="Africa/Johannesburg")
+    video_url = models.URLField(max_length=300, blank=True)
+    locale = models.CharField(max_length=2, default="en")
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=CONFIRMED)
+    buffer_minutes = models.PositiveIntegerField(default=10)
+    email_sent = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-starts_at"]
+        indexes = [
+            models.Index(fields=["status", "starts_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name} · {self.meeting_type.name} · {self.starts_at:%Y-%m-%d %H:%M}"
+
+
 # User Authentication Models
 # Note: CustomUser, PasswordResetToken, and ClientAccount models 
 # have been moved to the accounts app for better organization

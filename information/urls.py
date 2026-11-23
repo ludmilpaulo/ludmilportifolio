@@ -1,5 +1,8 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from .meeting_views import (
+    meeting_types, meeting_slots, book_meeting, meeting_detail, cancel_meeting, reschedule_meeting,
+)
 from .views import (
     InformationViewSet, ResumeViewSet, CompetenceViewSet, EducationViewSet, ExperienceViewSet,
     ProjectViewSet, MessageViewSet, ProjectInquiryViewSet, InquiryMessageViewSet,
@@ -57,6 +60,12 @@ urlpatterns = [
     path('update-notification/', update_notification, name='update_notification'),
     path('get-analytics/', get_analytics, name='get_analytics'),
     path('track-visit/', track_visit, name='track_visit'),
+    path('meetings/types/', meeting_types, name='meeting_types'),
+    path('meetings/slots/', meeting_slots, name='meeting_slots'),
+    path('meetings/book/', book_meeting, name='book_meeting'),
+    path('meetings/<uuid:token>/', meeting_detail, name='meeting_detail'),
+    path('meetings/<uuid:token>/cancel/', cancel_meeting, name='cancel_meeting'),
+    path('meetings/<uuid:token>/reschedule/', reschedule_meeting, name='reschedule_meeting'),
     path('certificates/', certificates, name='certificates'),
     path('certificates/<int:pk>/', certificate_detail, name='certificate_detail'),
     

@@ -4,6 +4,7 @@ from .models import (
     Information, Competence, Education, Experience, Project, Message,
     ProjectInquiry, InquiryMessage, Task, Invoice, InvoiceItem, 
     Document, TeamMember, Notification, Certificate, Resume,
+    MeetingType, AvailabilityWindow, Booking,
 )
 
 @admin.register(Information)
@@ -132,6 +133,28 @@ class TeamMemberAdmin(admin.ModelAdmin):
     list_display = ('name', 'inquiry', 'role', 'email')
     search_fields = ('name', 'email', 'role')
     readonly_fields = ('created_at',)
+
+@admin.register(MeetingType)
+class MeetingTypeAdmin(admin.ModelAdmin):
+    list_display = ("name", "duration_minutes", "buffer_minutes", "is_active", "sort_order")
+    list_editable = ("duration_minutes", "buffer_minutes", "is_active", "sort_order")
+    search_fields = ("name", "name_pt", "slug")
+    prepopulated_fields = {"slug": ("name",)}
+
+
+@admin.register(AvailabilityWindow)
+class AvailabilityWindowAdmin(admin.ModelAdmin):
+    list_display = ("weekday", "start_time", "end_time", "timezone")
+    list_filter = ("weekday", "timezone")
+
+
+@admin.register(Booking)
+class BookingAdmin(admin.ModelAdmin):
+    list_display = ("name", "email", "meeting_type", "starts_at", "visitor_timezone", "status")
+    list_filter = ("status", "meeting_type")
+    search_fields = ("name", "email", "company")
+    readonly_fields = ("token", "created_at", "updated_at", "video_url")
+
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
